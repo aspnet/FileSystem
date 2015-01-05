@@ -2,71 +2,56 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Text.RegularExpressions;
-using Microsoft.Framework.Expiration.Interfaces;
 
 namespace Microsoft.AspNet.FileSystems
 {
-    internal class FileChangeTrigger : IExpirationTrigger
+    internal class FileChangeTrigger : FileExpirationTriggerBase
     {
-        private CancellationTokenSource TokenSource { get; set; } = new CancellationTokenSource();
+        private static readonly TimeSpan FileCheckInterval = TimeSpan.FromSeconds(3);
+        private readonly IFileSystem _fileSystem;
+        private DateTime _lastRefreshTime;
+        private DateTimeOffset _lastModified;
 
-        public FileChangeTrigger(string pattern)
+        public FileChangeTrigger(IFileSystem fileSystem, string filePath)
         {
-            Pattern = pattern;
+            _fileSystem = fileSystem;
+            FilePath = filePath;
+            UpdateFileInfo();
         }
 
-        public string Pattern { get; private set; }
+        public string FilePath { get; }
 
-        private Regex _searchRegex;
-        private Regex SearchRegex
+        public override bool IsExpired
         {
-            get
-            {
-                if (_searchRegex == null)
-                {
-                    // Perf: Compile this as this may be used multiple times.
-                    _searchRegex = new Regex('^' + Pattern + '$', RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
-                }
+            get { return base.IsExpired || IsFileChangedInFileSystem(); }
+        }
 
-                return _searchRegex;
+        // for unit testing.
+        protected virtual DateTime UtcNow
+        {
+            get { return DateTime.UtcNow; }
+        }
+
+        private bool IsFileChangedInFileSystem()
+        {
+            if (UtcNow - _lastRefreshTime < FileCheckInterval)
+            {
+                // Don't hit the file system if the cache is still valid.
+                return false;
             }
+
+            var previousLastModified = _lastModified;
+            UpdateFileInfo();
+
+            return previousLastModified != _lastModified;
         }
 
-        public bool ActiveExpirationCallbacks
+        private void UpdateFileInfo()
         {
-            get { return true; }
-        }
+            var fileInfo = _fileSystem.GetFileInfo(FilePath);
+            _lastModified = fileInfo.LastModified;
 
-        public bool IsExpired
-        {
-            get { return TokenSource.Token.IsCancellationRequested; }
-        }
-
-        public IDisposable RegisterExpirationCallback(Action<object> callback, object state)
-        {
-            return TokenSource.Token.Register(callback, state);
-        }
-
-        public bool IsMatch(string relativePath)
-        {
-            return SearchRegex.IsMatch(relativePath);
-        }
-
-        public void Changed()
-        {
-            Task.Run(() =>
-            {
-                try
-                {
-                    TokenSource.Cancel();
-                }
-                catch
-                {
-                }
-            });
+            _lastRefreshTime = UtcNow;
         }
     }
 }

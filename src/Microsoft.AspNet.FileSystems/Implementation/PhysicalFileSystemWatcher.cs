@@ -12,19 +12,18 @@ namespace Microsoft.AspNet.FileSystems
 {
     internal class PhysicalFileSystemWatcher
     {
-        private readonly ConcurrentDictionary<string, FileChangeTrigger> _triggerCache =
-            new ConcurrentDictionary<string, FileChangeTrigger>(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, FileExpirationTriggerBase> _triggerCache =
+            new ConcurrentDictionary<string, FileExpirationTriggerBase>(StringComparer.OrdinalIgnoreCase);
 
         private readonly FileSystemWatcher _fileWatcher;
 
         private readonly object _lockObject = new object();
+        private readonly PhysicalFileSystem _fileSystem;
 
-        private readonly string _root;
-
-        internal PhysicalFileSystemWatcher(string root)
+        internal PhysicalFileSystemWatcher(PhysicalFileSystem fileSystem)
         {
-            _root = root;
-            _fileWatcher = new FileSystemWatcher(root);
+            _fileSystem = fileSystem;
+            _fileWatcher = new FileSystemWatcher(fileSystem.Root);
             _fileWatcher.IncludeSubdirectories = true;
             _fileWatcher.Created += OnChanged;
             _fileWatcher.Changed += OnChanged;
@@ -35,12 +34,16 @@ namespace Microsoft.AspNet.FileSystems
         internal IExpirationTrigger CreateFileChangeTrigger(string filter)
         {
             filter = NormalizeFilter(filter);
-            var pattern = WildcardToRegexPattern(filter);
+            var isWildCardSearch = IsWildCardSearch(filter);
+            var pattern = isWildCardSearch ? WildcardToRegexPattern(filter) : filter;
 
-            FileChangeTrigger expirationTrigger;
+            FileExpirationTriggerBase expirationTrigger;
             if (!_triggerCache.TryGetValue(pattern, out expirationTrigger))
             {
-                expirationTrigger = _triggerCache.GetOrAdd(pattern, new FileChangeTrigger(pattern));
+                expirationTrigger =  isWildCardSearch ? (FileExpirationTriggerBase)new WildcardFileChangeTrigger(pattern) :
+                                                        new FileChangeTrigger(_fileSystem, pattern);
+                
+                expirationTrigger = _triggerCache.GetOrAdd(pattern, expirationTrigger);
                 lock (_lockObject)
                 {
                     if (_triggerCache.Count > 0 && !_fileWatcher.EnableRaisingEvents)
@@ -56,14 +59,18 @@ namespace Microsoft.AspNet.FileSystems
 
         private void OnChanged(object sender, FileSystemEventArgs e)
         {
-            var relativePath = e.FullPath.Replace(_root, string.Empty);
+            var relativePath = e.FullPath.Replace(_fileSystem.Root, string.Empty);
             if (_triggerCache.ContainsKey(relativePath))
             {
                 ReportChangeForMatchedEntries(relativePath);
             }
             else
             {
-                foreach (var trigger in _triggerCache.Values.Where(t => t.IsMatch(relativePath)))
+                var wildCardTriggers = _triggerCache.Values
+                                                    .OfType<WildcardFileChangeTrigger>()
+                                                    .Where(t => t.IsMatch(relativePath));
+
+                foreach (var trigger in wildCardTriggers)
                 {
                     ReportChangeForMatchedEntries(trigger.Pattern);
                 }
@@ -72,7 +79,7 @@ namespace Microsoft.AspNet.FileSystems
 
         private void ReportChangeForMatchedEntries(string pattern)
         {
-            FileChangeTrigger expirationTrigger;
+            FileExpirationTriggerBase expirationTrigger;
             if (_triggerCache.TryRemove(pattern, out expirationTrigger))
             {
                 expirationTrigger.Changed();
@@ -140,6 +147,11 @@ namespace Microsoft.AspNet.FileSystems
             }
 
             return regex;
+        }
+
+        private static bool IsWildCardSearch(string pattern)
+        {
+            return pattern.IndexOf('*') != -1;
         }
     }
 }

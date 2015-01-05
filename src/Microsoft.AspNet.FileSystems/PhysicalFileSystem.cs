@@ -62,7 +62,7 @@ namespace Microsoft.AspNet.FileSystems
             }
 
             // Monitor only the application's root folder.
-            _physicalFileSystemWatcher = new PhysicalFileSystemWatcher(Root);
+            _physicalFileSystemWatcher = new PhysicalFileSystemWatcher(this);
         }
 
         /// <summary>
