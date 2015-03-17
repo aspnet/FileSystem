@@ -4,9 +4,9 @@
 using System;
 using Microsoft.Framework.Expiration.Interfaces;
 
-namespace Microsoft.AspNet.FileProviders
+namespace Microsoft.AspNet.FileProviders.Internal
 {
-    internal class NoopTrigger : IExpirationTrigger
+    public class NoopTrigger : IExpirationTrigger
     {
         public static NoopTrigger Singleton { get; } = new NoopTrigger();
 

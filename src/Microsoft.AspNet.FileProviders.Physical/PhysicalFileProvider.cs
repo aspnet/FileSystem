@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.AspNet.FileProviders.Internal;
 using Microsoft.Framework.Expiration.Interfaces;
 
 namespace Microsoft.AspNet.FileProviders

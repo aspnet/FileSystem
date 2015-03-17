@@ -1,0 +1,13 @@
+{
+    "dependencies": {
+        "Microsoft.AspNet.FileProviders.Physical": "1.0.0-*",
+        "Shouldly": "1.1.1.1",
+        "xunit.runner.aspnet": "2.0.0-aspnet-*"
+    },
+    "commands": {
+        "test": "xunit.runner.aspnet"
+    },
+    "frameworks": {
+        "dnx451": { }
+    }
+}
