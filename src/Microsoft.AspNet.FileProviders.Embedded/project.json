@@ -2,7 +2,7 @@
     "version": "1.0.0-*",
     "description": "Implementation of ASP.NET 5 embedded file provider abstractions.",
     "dependencies": {
-        "Microsoft.AspNet.FileProviders": { "version": "1.0.0-*", "type": "build" }
+        "Microsoft.AspNet.FileProviders.Common": { "version": "1.0.0-*", "type": "build" }
     },
     "frameworks": {
         "net45": { },
