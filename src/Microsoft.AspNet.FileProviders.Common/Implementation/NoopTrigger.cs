@@ -6,7 +6,7 @@ using Microsoft.Framework.Expiration.Interfaces;
 
 namespace Microsoft.AspNet.FileProviders
 {
-    internal class NoopTrigger : IExpirationTrigger
+    public class NoopTrigger : IExpirationTrigger
     {
         public static NoopTrigger Singleton { get; } = new NoopTrigger();
 
