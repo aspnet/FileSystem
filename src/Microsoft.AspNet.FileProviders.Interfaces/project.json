@@ -1,15 +1,15 @@
 {
-    "version": "1.0.0-*",
+    "version": "1.0.0-beta4",
     "description": "ASP.NET 5 file provider interfaces.",
     "dependencies": {
-        "Microsoft.Framework.Caching.Interfaces": "1.0.0-*"
+        "Microsoft.Framework.Caching.Interfaces": "1.0.0-beta4"
     },
     "frameworks": {
         "net45": { },
         "dnx451": { },
         "dnxcore50": {
             "dependencies": {
-                "System.IO": "4.0.10-beta-*"
+                "System.IO": "4.0.10-beta-22816"
             }
         }
     }
