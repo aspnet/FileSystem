@@ -162,10 +162,10 @@ namespace Microsoft.AspNet.FileProviders
         }
 
         [Fact]
-        public void GetDirectoryContents_FromRootPath_ForEmptyDirectoryName()
+        public async void GetDirectoryContents_FromRootPath_ForEmptyDirectoryName()
         {
             var provider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "sub"));
-            var info = provider.GetDirectoryContents(string.Empty);
+            var info = await provider.GetDirectoryContentsAsync(string.Empty);
             Assert.NotNull(info);
             Assert.True(info.Exists);
             var firstDirectory = info.Where(f => f.IsDirectory).Where(f => f.Exists).FirstOrDefault();
@@ -196,7 +196,7 @@ namespace Microsoft.AspNet.FileProviders
         }
 
         [Fact]
-        public void AbsolutePathNotAllowed()
+        public async void AbsolutePathNotAllowed()
         {
             var provider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "sub"));
 
@@ -213,6 +213,7 @@ namespace Microsoft.AspNet.FileProviders
             Assert.False(info.Exists);
 
             var directory1 = Path.Combine(applicationBase, "sub");
+<<<<<<< HEAD:test/Microsoft.AspNet.FileProviders.Physical.Tests/PhysicalFileProviderTests.cs
             var directoryContents = provider.GetDirectoryContents(directory1);
             Assert.NotNull(info);
             Assert.False(info.Exists);
@@ -221,6 +222,16 @@ namespace Microsoft.AspNet.FileProviders
             directoryContents = provider.GetDirectoryContents(directory2);
             Assert.NotNull(info);
             Assert.False(info.Exists);
+=======
+            var directoryContents = await provider.GetDirectoryContentsAsync(directory1);
+            info.ShouldNotBe(null);
+            info.Exists.ShouldBe(false);
+
+            var directory2 = Path.Combine(applicationBase, "Does_Not_Exists");
+            directoryContents = await provider.GetDirectoryContentsAsync(directory2);
+            info.ShouldNotBe(null);
+            info.Exists.ShouldBe(false);
+>>>>>>> Make 'IFileProvider.GetDirectoryContents' async:test/Microsoft.AspNet.FileProviders.Tests/PhysicalFileProviderTests.cs
         }
 
         [Fact]

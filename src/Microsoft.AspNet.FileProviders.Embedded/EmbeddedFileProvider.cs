@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using Microsoft.Framework.Caching;
 
 namespace Microsoft.AspNet.FileProviders
@@ -81,7 +82,7 @@ namespace Microsoft.AspNet.FileProviders
         /// </summary>
         /// <param name="subpath">The path that identifies the directory</param>
         /// <returns>Contents of the directory. Caller must check Exists property.</returns>
-        public IDirectoryContents GetDirectoryContents(string subpath)
+        public async Task<IDirectoryContents> GetDirectoryContentsAsync(string subpath)
         {
             // The file name is assumed to be the remainder of the resource name.
             if (subpath == null)
@@ -101,21 +102,23 @@ namespace Microsoft.AspNet.FileProviders
                 return new NotFoundDirectoryContents();
             }
 
-            IList<IFileInfo> entries = new List<IFileInfo>();
+			return await Task.Factory.StartNew<IDirectoryContents>(() =>
+			{
+				IList<IFileInfo> entries = new List<IFileInfo>();
 
-            // TODO: The list of resources in an assembly isn't going to change. Consider caching.
-            string[] resources = _assembly.GetManifestResourceNames();
-            for (int i = 0; i < resources.Length; i++)
-            {
-                string resourceName = resources[i];
-                if (resourceName.StartsWith(_baseNamespace))
-                {
-                    entries.Add(new EmbeddedResourceFileInfo(
-                        _assembly, resourceName, resourceName.Substring(_baseNamespace.Length), _lastModified));
-                }
-            }
-
-            return new EnumerableDirectoryContents(entries);
+				// TODO: The list of resources in an assembly isn't going to change. Consider caching.
+				string[] resources = _assembly.GetManifestResourceNames();
+				for (int i = 0; i < resources.Length; i++)
+				{
+					string resourceName = resources[i];
+					if (resourceName.StartsWith(_baseNamespace))
+					{
+						entries.Add(new EmbeddedResourceFileInfo(
+							_assembly, resourceName, resourceName.Substring(_baseNamespace.Length), _lastModified));
+					}
+				}
+				return new EnumerableDirectoryContents(entries);
+			});
         }
 
         public IExpirationTrigger Watch(string pattern)
