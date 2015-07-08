@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Microsoft.Framework.Caching;
+using Microsoft.Framework.Internal;
 
 namespace Microsoft.AspNet.FileProviders
 {
@@ -35,13 +36,8 @@ namespace Microsoft.AspNet.FileProviders
         /// </summary>
         /// <param name="assembly">The assembly that contains the embedded resources.</param>
         /// <param name="baseNamespace">The base namespace that contains the embedded resources.</param>
-        public EmbeddedFileProvider(Assembly assembly, string baseNamespace)
+        public EmbeddedFileProvider([NotNull] Assembly assembly, string baseNamespace)
         {
-            if (assembly == null)
-            {
-                throw new ArgumentNullException("assembly");
-            }
-
             _baseNamespace = string.IsNullOrEmpty(baseNamespace) ? string.Empty : baseNamespace + ".";
             _assembly = assembly;
             // REVIEW: Does this even make sense?

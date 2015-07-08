@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Framework.FileSystemGlobbing.Internal.PathSegments;
 using Microsoft.Framework.FileSystemGlobbing.Internal.PatternContexts;
+using Microsoft.Framework.Internal;
 
 namespace Microsoft.Framework.FileSystemGlobbing.Internal.Patterns
 {
@@ -13,13 +14,8 @@ namespace Microsoft.Framework.FileSystemGlobbing.Internal.Patterns
         private static readonly char[] _slashes = new[] { '/', '\\' };
         private static readonly char[] _star = new[] { '*' };
 
-        public static IPattern Build(string pattern)
+        public static IPattern Build([NotNull] string pattern)
         {
-            if (pattern == null)
-            {
-                throw new ArgumentNullException("pattern");
-            }
-
             pattern = pattern.TrimStart(_slashes);
 
             if (pattern.TrimEnd(_slashes).Length < pattern.Length)
