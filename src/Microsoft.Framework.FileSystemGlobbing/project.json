@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0-*",
+    "version": "1.0.0-beta5",
     "description": "Implementation of ASP.NET 5 file system globbing.",
     "dependencies": {
     },

@@ -1,9 +1,9 @@
 {
-    "version": "1.0.0-*",
+    "version": "1.0.0-beta5",
     "dependencies": {
-        "xunit.runner.aspnet": "2.0.0-aspnet-*",
-        "Microsoft.Framework.FileSystemGlobbing": "1.0.0-*",
-        "Microsoft.AspNet.Testing": "1.0.0-*"
+        "xunit.runner.aspnet": "2.0.0-aspnet-beta5",
+        "Microsoft.Framework.FileSystemGlobbing": "1.0.0-beta5",
+        "Microsoft.AspNet.Testing": "1.0.0-beta5"
     },
 
     "frameworks": {
