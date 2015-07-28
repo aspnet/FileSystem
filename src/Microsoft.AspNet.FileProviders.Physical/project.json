@@ -1,27 +1,30 @@
 {
-    "version": "1.0.0-*",
+    "version": "1.0.0-beta6",
     "description": "Implementation of ASP.NET 5 file provider abstractions for physical files.",
     "repository": {
         "type": "git",
         "url": "git://github.com/aspnet/filesystem"
     },
     "dependencies": {
-        "Microsoft.AspNet.FileProviders.Sources": { "version": "1.0.0-*", "type": "build" },
-        "Microsoft.AspNet.FileProviders.Abstractions": "1.0.0-*"
+        "Microsoft.AspNet.FileProviders.Sources": {
+            "version": "1.0.0-beta6",
+            "type": "build"
+        },
+        "Microsoft.AspNet.FileProviders.Abstractions": "1.0.0-beta6"
     },
     "frameworks": {
-        "net45": { },
-        "dnx451": { },
+        "net45": {},
+        "dnx451": {},
         "dnxcore50": {
             "dependencies": {
-                "System.Collections": "4.0.10-beta-*",
-                "System.Collections.Concurrent": "4.0.10-beta-*",
-                "System.IO.FileSystem.Watcher": "4.0.0-beta-*",
-                "System.IO.FileSystem": "4.0.0-beta-*",
-                "System.IO.FileSystem.Primitives": "4.0.0-beta-*",
-                "System.Runtime.Extensions": "4.0.10-beta-*",
-                "System.Text.RegularExpressions": "4.0.10-beta-*",
-                "System.Threading": "4.0.10-beta-*"
+                "System.Collections": "4.0.10-beta-23109",
+                "System.Collections.Concurrent": "4.0.10-beta-23109",
+                "System.IO.FileSystem.Watcher": "4.0.0-beta-23109",
+                "System.IO.FileSystem": "4.0.0-beta-23109",
+                "System.IO.FileSystem.Primitives": "4.0.0-beta-23109",
+                "System.Runtime.Extensions": "4.0.10-beta-23109",
+                "System.Text.RegularExpressions": "4.0.10-beta-23109",
+                "System.Threading": "4.0.10-beta-23109"
             }
         }
     }

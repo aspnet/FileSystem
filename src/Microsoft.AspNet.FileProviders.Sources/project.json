@@ -1,19 +1,19 @@
 {
-    "version": "1.0.0-*",
+    "version": "1.0.0-beta6",
     "repository": {
         "type": "git",
         "url": "git://github.com/aspnet/filesystem"
     },
     "shared": "**/*.cs",
     "dependencies": {
-        "Microsoft.AspNet.FileProviders.Abstractions": "1.0.0-*"
+        "Microsoft.AspNet.FileProviders.Abstractions": "1.0.0-beta6"
     },
     "frameworks": {
-        "net45": { },
-        "dnx451": { },
+        "net45": {},
+        "dnx451": {},
         "dnxcore50": {
             "dependencies": {
-                "System.Linq": "4.0.0-beta-*"
+                "System.Linq": "4.0.0-beta-23109"
             }
         }
     }

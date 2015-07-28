@@ -1,16 +1,15 @@
 {
     "version": "1.0.0-*",
     "dependencies": {
-        "xunit.runner.aspnet": "2.0.0-aspnet-*",
-        "Microsoft.Framework.FileSystemGlobbing": "1.0.0-*",
-        "Microsoft.AspNet.Testing": "1.0.0-*"
+        "xunit.runner.aspnet": "2.0.0-aspnet-beta6",
+        "Microsoft.Framework.FileSystemGlobbing": "1.0.0-beta6",
+        "Microsoft.AspNet.Testing": "1.0.0-beta6"
     },
-
     "frameworks": {
-        "dnx451": { },
+        "dnx451": {},
         "dnxcore50": {
             "dependencies": {
-                "System.Runtime": "4.0.20-*"
+                "System.Runtime": "4.0.20-beta-23109"
             }
         }
     },
