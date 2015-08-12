@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Framework.Caching;
 
 namespace Microsoft.AspNet.FileProviders
@@ -113,7 +114,7 @@ namespace Microsoft.AspNet.FileProviders
         /// </summary>
         /// <param name="subpath">A path under the root directory</param>
         /// <returns>Contents of the directory. Caller must check Exists property.</returns>
-        public IDirectoryContents GetDirectoryContents(string subpath)
+        public async Task<IDirectoryContents> GetDirectoryContentsAsync(string subpath)
         {
             try
             {
@@ -143,24 +144,26 @@ namespace Microsoft.AspNet.FileProviders
                         return new NotFoundDirectoryContents();
                     }
 
-                    var physicalInfos = directoryInfo
-                        .EnumerateFileSystemInfos()
-                        .Where(info => !FileSystemInfoHelper.IsHiddenFile(info));
-                    var virtualInfos = new List<IFileInfo>();
-                    foreach (var fileSystemInfo in physicalInfos)
-                    {
-                        var fileInfo = fileSystemInfo as FileInfo;
-                        if (fileInfo != null)
-                        {
-                            virtualInfos.Add(new PhysicalFileInfo(_filesWatcher, fileInfo));
-                        }
-                        else
-                        {
-                            virtualInfos.Add(new PhysicalDirectoryInfo((DirectoryInfo)fileSystemInfo));
-                        }
-                    }
-
-                    return new EnumerableDirectoryContents(virtualInfos);
+					return await Task.Factory.StartNew<IDirectoryContents>(() =>
+					{
+						var physicalInfos = directoryInfo
+							.EnumerateFileSystemInfos()
+							.Where(info => !FileSystemInfoHelper.IsHiddenFile(info));
+						var virtualInfos = new List<IFileInfo>();
+						foreach (var fileSystemInfo in physicalInfos)
+						{
+							var fileInfo = fileSystemInfo as FileInfo;
+							if (fileInfo != null)
+							{
+								virtualInfos.Add(new PhysicalFileInfo(_filesWatcher, fileInfo));
+							}
+							else
+							{
+								virtualInfos.Add(new PhysicalDirectoryInfo((DirectoryInfo)fileSystemInfo));
+							}
+						}
+						return new EnumerableDirectoryContents(virtualInfos);
+					});
                 }
             }
             catch (DirectoryNotFoundException)

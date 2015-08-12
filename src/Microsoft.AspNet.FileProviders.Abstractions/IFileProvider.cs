@@ -2,6 +2,8 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using Microsoft.Framework.Caching;
+using Microsoft.Framework.Expiration.Interfaces;
+using System.Threading.Tasks;
 
 namespace Microsoft.AspNet.FileProviders
 {
@@ -22,7 +24,7 @@ namespace Microsoft.AspNet.FileProviders
         /// </summary>
         /// <param name="subpath">Relative path that identifies the directory.</param>
         /// <returns>Returns the contents of the directory.</returns>
-        IDirectoryContents GetDirectoryContents(string subpath);
+        Task<IDirectoryContents> GetDirectoryContentsAsync(string subpath);
 
         /// <summary>
         /// Creates a change trigger with the specified filter.
