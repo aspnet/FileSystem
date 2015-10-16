@@ -1,20 +1,20 @@
 {
-    "version": "1.0.0-*",
+    "version": "1.0.0-beta8",
     "description": "ASP.NET 5 file provider interfaces.",
     "repository": {
         "type": "git",
         "url": "git://github.com/aspnet/filesystem"
     },
     "dependencies": {
-        "Microsoft.Framework.Primitives": "1.0.0-*"
+        "Microsoft.Framework.Primitives": "1.0.0-beta8"
     },
     "frameworks": {
-        "net45": { },
-        "dnx451": { },
+        "net45": {},
+        "dnx451": {},
         "dnxcore50": {
             "dependencies": {
-                "System.IO": "4.0.11-beta-*",
-                "System.Resources.ResourceManager": "4.0.1-beta-*"
+                "System.IO": "4.0.11-beta-23409",
+                "System.Resources.ResourceManager": "4.0.1-beta-23409"
             }
         }
     }
