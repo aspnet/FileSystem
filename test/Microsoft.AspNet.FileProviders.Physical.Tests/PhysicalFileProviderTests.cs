@@ -16,7 +16,7 @@ namespace Microsoft.AspNet.FileProviders
     {
         private const int WaitTimeForTokenToFire = 2 * 100;
 
-        // See https://github.com/dotnet/corefx/blob/master/src/System.IO.FileSystem.Watcher/src/System/IO/FileSystemWatcher.Linux.cs#L13
+        // See https://github.com/dotnet/corefx/blob/750602b098ceef5aa11ab626bdb359980dd1aa02/src/System.IO.FileSystem.Watcher/src/System/IO/FileSystemWatcher.Linux.cs#L13
         private const int WaitTimeAfterDirectoryCreation = 2 * 100;
 
         [Fact]
