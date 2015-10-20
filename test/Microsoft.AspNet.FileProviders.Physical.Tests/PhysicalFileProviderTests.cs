@@ -16,6 +16,9 @@ namespace Microsoft.AspNet.FileProviders
     {
         private const int WaitTimeForTokenToFire = 2 * 100;
 
+        // See https://github.com/dotnet/corefx/blob/master/src/System.IO.FileSystem.Watcher/src/System/IO/FileSystemWatcher.Linux.cs#L13
+        private const int WaitTimeAfterDirectoryCreation = 2 * 100;
+
         [Fact]
         public void ExistingFilesReturnTrue()
         {
@@ -483,6 +486,8 @@ namespace Microsoft.AspNet.FileProviders
 
             var folderPath = Path.Combine(Path.GetTempPath(), folderName);
             Directory.CreateDirectory(folderPath);
+            await Task.Delay(WaitTimeAfterDirectoryCreation);
+
             File.WriteAllText(Path.Combine(folderPath, fileName), "Content");
 
             await Task.Delay(WaitTimeForTokenToFire);
@@ -536,7 +541,9 @@ namespace Microsoft.AspNet.FileProviders
             var root = Path.GetTempPath();
             var fileName = Guid.NewGuid().ToString();
             var subFolder = Path.Combine(root, Guid.NewGuid().ToString());
+
             Directory.CreateDirectory(subFolder);
+            await Task.Delay(WaitTimeAfterDirectoryCreation);
 
             int pattern1tokenCount = 0, pattern2tokenCount = 0;
             Action<object> callback1 = _ => { pattern1tokenCount++; };
@@ -576,7 +583,9 @@ namespace Microsoft.AspNet.FileProviders
             var root = Path.GetTempPath();
             var fileName = Guid.NewGuid().ToString();
             var subFolder = Path.Combine(root, Guid.NewGuid().ToString());
+
             Directory.CreateDirectory(subFolder);
+            await Task.Delay(WaitTimeAfterDirectoryCreation);
 
             int pattern1tokenCount = 0, pattern2tokenCount = 0;
             Action<object> callback1 = _ => { pattern1tokenCount++; };
@@ -617,7 +626,9 @@ namespace Microsoft.AspNet.FileProviders
             var root = Path.GetTempPath();
             var fileName = Guid.NewGuid().ToString();
             var subFolder = Path.Combine(root, subFolderName);
+
             Directory.CreateDirectory(subFolder);
+            await Task.Delay(WaitTimeAfterDirectoryCreation);
 
             int pattern1tokenCount = 0, pattern2tokenCount = 0;
             var provider = new PhysicalFileProvider(root);
@@ -669,7 +680,7 @@ namespace Microsoft.AspNet.FileProviders
         }
 
         [ConditionalFact]
-        [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
+        [OSSkipCondition(OperatingSystems.Linux, SkipReason = "Race condition in inotify API makes this very flaky.")]
         public async Task Token_Fired_On_Directory_Name_Change()
         {
             var provider = new PhysicalFileProvider(Path.GetTempPath());
@@ -679,6 +690,7 @@ namespace Microsoft.AspNet.FileProviders
             var newDirectoryFullPath = Path.Combine(Path.GetTempPath(), newDirectoryName);
 
             Directory.CreateDirectory(oldDirectoryFullPath);
+
             var oldDirectorytoken = provider.Watch("**/" + oldDirectoryName);
             var newDirectorytoken = provider.Watch("**/" + newDirectoryName);
             var oldtokens = new List<IChangeToken>();
