@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-*",
+  "version": "1.0.0-rc1-final",
   "compilationOptions": {
     "warningsAsErrors": true,
     "keyFile": "../../tools/Key.snk"
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "Microsoft.Extensions.HashCodeCombiner.Sources": {
-      "version": "1.0.0-*",
+      "version": "1.0.0-rc1-final",
       "type": "build"
     }
   },
@@ -21,11 +21,11 @@
     },
     "dotnet5.4": {
       "dependencies": {
-        "System.Runtime": "4.0.21-beta-*",
-        "System.Collections": "4.0.11-beta-*",
-        "System.IO.FileSystem": "4.0.1-beta-*",
-        "System.Linq": "4.0.1-beta-*",
-        "System.Runtime.Extensions": "4.0.11-beta-*"
+        "System.Runtime": "4.0.21-beta-23516",
+        "System.Collections": "4.0.11-beta-23516",
+        "System.IO.FileSystem": "4.0.1-beta-23516",
+        "System.Linq": "4.0.1-beta-23516",
+        "System.Runtime.Extensions": "4.0.11-beta-23516"
       }
     }
   }
