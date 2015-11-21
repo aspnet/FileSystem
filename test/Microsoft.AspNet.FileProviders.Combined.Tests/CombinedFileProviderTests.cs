@@ -5,6 +5,8 @@ using System;
 using System.Linq;
 using Microsoft.AspNet.FileProviders.Combined.Tests.TestUtility;
 using Xunit;
+using System.Collections.Generic;
+using Microsoft.Extensions.Primitives;
 
 namespace Microsoft.AspNet.FileProviders.Embedded.Tests
 {
@@ -160,6 +162,91 @@ namespace Microsoft.AspNet.FileProviders.Embedded.Tests
             Assert.True(files.Exists);
             Assert.Collection(files.OrderBy(f => f.Name, StringComparer.Ordinal),
                 file => Assert.Equal(folderCFile3, file));
+        }
+
+        [Fact]
+        public void Watch_ReturnsNoopChangeToken_IfNoFileProviderSpecified()
+        {
+            // Arrange
+            var provider = new CombinedFileProvider();
+
+            // Act
+            var changeToken = provider.Watch("DoesNotExist*Pattern");
+
+            // Assert
+            Assert.NotNull(changeToken);
+            Assert.False(changeToken.ActiveChangeCallbacks);
+        }
+
+        [Fact]
+        public void Watch_ReturnsNoopChangeToken_IfNoWatcherReturnedByFileProviders()
+        {
+            // Arrange
+            var provider = new CombinedFileProvider(
+                    new MockFileProvider()
+                );
+
+            // Act
+            var changeToken = provider.Watch("DoesntExist*Pattern");
+
+            // Assert
+            Assert.NotNull(changeToken);
+            Assert.False(changeToken.ActiveChangeCallbacks);
+        }
+
+        [Fact]
+        public void Watch_CombinedChangeToken()
+        {
+            // Arrange
+            var firstChangeToken = new MockChangeToken();
+            var secondChangeToken = new MockChangeToken();
+            var thirdChangeToken = new MockChangeToken();
+            var provider = new CombinedFileProvider(
+                new MockFileProvider(new KeyValuePair<string, IChangeToken>("pattern", firstChangeToken),
+                                     new KeyValuePair<string, IChangeToken>("2ndpattern", secondChangeToken)),
+                new MockFileProvider(new KeyValuePair<string, IChangeToken>("pattern", thirdChangeToken))
+                );
+
+            // Act
+            var changeToken = provider.Watch("pattern");
+
+            // Assert
+            Assert.NotNull(changeToken);
+            Assert.True(changeToken.ActiveChangeCallbacks);
+            Assert.False(changeToken.HasChanged);
+
+            // HasChanged update
+            // first change token
+            firstChangeToken.HasChanged = true;
+            Assert.True(changeToken.HasChanged);
+            firstChangeToken.HasChanged = false;
+            // second change token
+            secondChangeToken.HasChanged = true;
+            Assert.False(changeToken.HasChanged);
+            secondChangeToken.HasChanged = false;
+            // third change token
+            thirdChangeToken.HasChanged = true;
+            Assert.True(changeToken.HasChanged);
+            thirdChangeToken.HasChanged = false;
+
+            // Register callback
+            Assert.Equal(0, firstChangeToken.NbOfCallback);
+            Assert.Equal(0, secondChangeToken.NbOfCallback);
+            Assert.Equal(0, thirdChangeToken.NbOfCallback);
+            var hasBeenCalled = false;
+            object result = null;
+            changeToken.RegisterChangeCallback(item =>
+            {
+                hasBeenCalled = true;
+                result = item;
+            }, null);
+            Assert.Equal(1, firstChangeToken.NbOfCallback);
+            Assert.Equal(0, secondChangeToken.NbOfCallback);
+            Assert.Equal(1, thirdChangeToken.NbOfCallback);
+            var expectedResult = new object();
+            firstChangeToken.RaiseCallback(expectedResult);
+            Assert.True(hasBeenCalled);
+            Assert.Equal(expectedResult, result);
         }
     }
 }

@@ -11,10 +11,20 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests.TestUtility
     internal class MockFileProvider : IFileProvider
     {
         private IEnumerable<IFileInfo> _files;
+        private Dictionary<string, IChangeToken> _changeTokens;
+
+        public MockFileProvider()
+        {}
 
         public MockFileProvider(params IFileInfo[] files)
         {
             _files = files;
+        }
+
+        public MockFileProvider(params KeyValuePair<string, IChangeToken>[] changeTokens)
+        {
+            _changeTokens = changeTokens.ToDictionary(changeToken => changeToken.Key,
+                                                      changeToken => changeToken.Value);
         }
 
         public IDirectoryContents GetDirectoryContents(string subpath)
@@ -40,7 +50,11 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests.TestUtility
 
         public IChangeToken Watch(string filter)
         {
-            throw new NotImplementedException();
+            if(_changeTokens != null && _changeTokens.ContainsKey(filter))
+            {
+                return _changeTokens[filter];
+            }
+            return NoopChangeToken.Singleton;
         }
     }
 }
