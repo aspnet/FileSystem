@@ -30,7 +30,7 @@ namespace Microsoft.AspNet.FileProviders
         /// Locates a file at the given path.
         /// </summary>
         /// <param name="subpath">The path that identifies the file. </param>
-        /// <returns>The file information. Caller must check Exists property.</returns>
+        /// <returns>The file information. Caller must check Exists property. This will be the first existing <see cref="IFileInfo"/> returned by the provided <see cref="IFileProvider"/> or a not found <see cref="IFileInfo"/> if no existing files is found.</returns>
         public IFileInfo GetFileInfo(string subpath)
         {
             foreach (var fileProvider in _fileProviders)
@@ -48,7 +48,7 @@ namespace Microsoft.AspNet.FileProviders
         /// Enumerate a directory at the given path, if any.
         /// </summary>
         /// <param name="subpath">The path that identifies the directory</param>
-        /// <returns>Contents of the directory. Caller must check Exists property.</returns>
+        /// <returns>Contents of the directory. Caller must check Exists property. The content is a merge of the contents of the provided <see cref="IFileProvider"/>. When there is multiple <see cref="IFileInfo"/> with the same Name property, only the first one is included on the results.</returns>
         public IDirectoryContents GetDirectoryContents(string subpath)
         {
             // gets the content of all directories and merged them
@@ -66,6 +66,12 @@ namespace Microsoft.AspNet.FileProviders
             return combinedDirectoryContents;
         }
 
+        /// <summary>
+        /// Creates a <see cref="IChangeToken"/> for the specified <paramref name="filter"/>.
+        /// </summary>
+        /// <remarks></remarks>
+        /// <param name="pattern">Filter string used to determine what files or folders to monitor. Example: **/*.cs, *.*, subFolder/**/*.cshtml.</param>
+        /// <returns>An <see cref="IChangeToken"/> that is notified when a file matching <paramref name="filter"/> is added, modified or deleted. The change token will be notified when one of the change token returned by the provided <see cref="IFileProvider"/> will be notified.</returns>
         public IChangeToken Watch(string pattern)
         {
             // Watch all file providers
