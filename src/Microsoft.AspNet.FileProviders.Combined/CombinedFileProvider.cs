@@ -53,24 +53,8 @@ namespace Microsoft.AspNet.FileProviders
         /// When there is multiple <see cref="IFileInfo"/> with the same Name property, only the first one is included on the results.</returns>
         public IDirectoryContents GetDirectoryContents(string subpath)
         {
-            // gets the content of all directories and merged them
-            var existingDirectoryContents = new List<IDirectoryContents>();
-            foreach (var fileProvider in _fileProviders)
-            {
-                var directoryContents = fileProvider.GetDirectoryContents(subpath);
-                if (directoryContents != null && directoryContents.Exists)
-                {
-                    existingDirectoryContents.Add(directoryContents);
-                }
-            }
-
-            // There is no existing directory contents
-            if (existingDirectoryContents.Count == 0)
-            {
-                return new NotFoundDirectoryContents();
-            }
-            var combinedDirectoryContents = new CombinedDirectoryContents(existingDirectoryContents);
-            return combinedDirectoryContents;
+            var directoryContents = new CombinedDirectoryContents(_fileProviders, subpath);
+            return directoryContents;
         }
 
         /// <summary>
@@ -104,39 +88,67 @@ namespace Microsoft.AspNet.FileProviders
 
         private class CombinedDirectoryContents : IDirectoryContents
         {
-            private readonly Lazy<Dictionary<string, IFileInfo>> _files;
+            private readonly Lazy<List<IDirectoryContents>> _directoriesContents;
+            private readonly Lazy<List<IFileInfo>> _files;
+            private readonly Lazy<bool> _exists;
 
-            public CombinedDirectoryContents(List<IDirectoryContents> listOfFiles)
+            public CombinedDirectoryContents(IFileProvider[] fileProviders, string subpath)
             {
-                _files = new Lazy<Dictionary<string, IFileInfo>>(() =>
+                _directoriesContents =new Lazy<List<IDirectoryContents>>(() =>
                 {
-                    var directoryFiles = new Dictionary<string, IFileInfo>();
-                    foreach (var files in listOfFiles)
+                    var directories =new List<IDirectoryContents>();
+                    foreach (var fileProvider in fileProviders)
                     {
-                        foreach (var file in files)
+                        var directoryContents = fileProvider.GetDirectoryContents(subpath);
+                        if (directoryContents != null && directoryContents.Exists)
                         {
-                            if (!directoryFiles.ContainsKey(file.Name))
+                            directories.Add(directoryContents);
+                        }
+                    }
+                    return directories;
+                }
+                );
+
+                _files = new Lazy<List<IFileInfo>>(() =>
+                {
+                    var files = new List<IFileInfo>();
+                    var names = new HashSet<string>();
+
+                    var directories = _directoriesContents.Value;
+                    for (int i = 0; i < directories.Count; i++)
+                    {
+                        var directoryContents = directories[i];
+                        foreach (var file in directoryContents)
+                        {
+                            if (names.Add(file.Name))
                             {
-                                directoryFiles.Add(file.Name, file);
+                                files.Add(file);
                             }
                         }
                     }
-                    return directoryFiles;
+                    return files;
+                });
+
+                _exists = new Lazy<bool>(() =>
+                {
+                    var directories = _directoriesContents.Value;
+                    var exists = directories.Count > 0;
+                    return exists;
                 });
             }
 
             public IEnumerator<IFileInfo> GetEnumerator()
             {
-                return _files.Value.Values.GetEnumerator();
+                return _files.Value.GetEnumerator();
             }
 
             IEnumerator IEnumerable.GetEnumerator()
             {
-                return _files.Value.Values.GetEnumerator();
+                return _files.Value.GetEnumerator();
             }
 
             // This directory exists because it is created only when there is existing IDrectoryContents to merge.
-            public bool Exists { get { return true; } }
+            public bool Exists { get { return _exists.Value; } }
         }
 
         private class CombinedFileChangeToken : IChangeToken
@@ -145,15 +157,15 @@ namespace Microsoft.AspNet.FileProviders
 
             public CombinedFileChangeToken(List<IChangeToken> changeTokens)
             {
-                _changeTokens = changeTokens ?? new List<IChangeToken>();
+                _changeTokens = changeTokens;
             }
 
             public IDisposable RegisterChangeCallback(Action<object> callback, object state)
             {
                 var disposables = new List<IDisposable>();
-                foreach (var changeToken in _changeTokens)
+                for (int i = 0; i < _changeTokens.Count; i++)
                 {
-                    var disposable = changeToken.RegisterChangeCallback(callback, state);
+                    var disposable = _changeTokens[i].RegisterChangeCallback(callback, state);
                     disposables.Add(disposable);
                 }
                 return new Disposables(disposables);
@@ -181,9 +193,9 @@ namespace Microsoft.AspNet.FileProviders
                 {
                     if (_disposables != null)
                     {
-                        foreach (var disposable in _disposables)
+                        for (int i = 0; i < _disposables.Count; i++)
                         {
-                            disposable.Dispose();
+                            _disposables[i].Dispose();
                         }
                     }
                 }
