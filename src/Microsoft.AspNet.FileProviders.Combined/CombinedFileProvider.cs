@@ -15,7 +15,7 @@ namespace Microsoft.AspNet.FileProviders
     /// </summary>
     public class CombinedFileProvider : IFileProvider
     {
-        private readonly IEnumerable<IFileProvider> _fileProviders;
+        private readonly IFileProvider[] _fileProviders;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CombinedFileProvider" /> class using a list of file provider.
@@ -48,21 +48,28 @@ namespace Microsoft.AspNet.FileProviders
         /// Enumerate a directory at the given path, if any.
         /// </summary>
         /// <param name="subpath">The path that identifies the directory</param>
-        /// <returns>Contents of the directory. Caller must check Exists property. The content is a merge of the contents of the provided <see cref="IFileProvider"/>. When there is multiple <see cref="IFileInfo"/> with the same Name property, only the first one is included on the results.</returns>
+        /// <returns>Contents of the directory. Caller must check Exists property.
+        /// The content is a merge of the contents of the provided <see cref="IFileProvider"/>.
+        /// When there is multiple <see cref="IFileInfo"/> with the same Name property, only the first one is included on the results.</returns>
         public IDirectoryContents GetDirectoryContents(string subpath)
         {
             // gets the content of all directories and merged them
-            var existingDirectoryContentsForAllProviders = _fileProviders.Select(
-                fileProvider => fileProvider.GetDirectoryContents(subpath))
-                .Where(directoryContents => directoryContents != null && directoryContents.Exists)
-                .ToList();
+            var existingDirectoryContents = new List<IDirectoryContents>();
+            foreach (var fileProvider in _fileProviders)
+            {
+                var directoryContents = fileProvider.GetDirectoryContents(subpath);
+                if (directoryContents != null && directoryContents.Exists)
+                {
+                    existingDirectoryContents.Add(directoryContents);
+                }
+            }
 
             // There is no existing directory contents
-            if (existingDirectoryContentsForAllProviders.Count == 0)
+            if (existingDirectoryContents.Count == 0)
             {
                 return new NotFoundDirectoryContents();
             }
-            var combinedDirectoryContents = new CombinedDirectoryContents(existingDirectoryContentsForAllProviders);
+            var combinedDirectoryContents = new CombinedDirectoryContents(existingDirectoryContents);
             return combinedDirectoryContents;
         }
 
@@ -71,13 +78,20 @@ namespace Microsoft.AspNet.FileProviders
         /// </summary>
         /// <remarks></remarks>
         /// <param name="pattern">Filter string used to determine what files or folders to monitor. Example: **/*.cs, *.*, subFolder/**/*.cshtml.</param>
-        /// <returns>An <see cref="IChangeToken"/> that is notified when a file matching <paramref name="filter"/> is added, modified or deleted. The change token will be notified when one of the change token returned by the provided <see cref="IFileProvider"/> will be notified.</returns>
+        /// <returns>An <see cref="IChangeToken"/> that is notified when a file matching <paramref name="filter"/> is added, modified or deleted.
+        /// The change token will be notified when one of the change token returned by the provided <see cref="IFileProvider"/> will be notified.</returns>
         public IChangeToken Watch(string pattern)
         {
             // Watch all file providers
-            var activeChangeTokens = _fileProviders
-                .Select(fileProvider => fileProvider.Watch(pattern))
-                .Where(changeToken => changeToken != null && changeToken.ActiveChangeCallbacks).ToList();
+            var activeChangeTokens = new List<IChangeToken>();
+            foreach (var fileProvider in _fileProviders)
+            {
+                var changeToken = fileProvider.Watch(pattern);
+                if (changeToken != null && changeToken.ActiveChangeCallbacks)
+                {
+                    activeChangeTokens.Add(changeToken);
+                }
+            }
 
             // There is no change token with active change callbacks
             if (activeChangeTokens.Count == 0)
@@ -90,48 +104,59 @@ namespace Microsoft.AspNet.FileProviders
 
         private class CombinedDirectoryContents : IDirectoryContents
         {
-            private readonly Dictionary<string, IFileInfo> _files = new Dictionary<string, IFileInfo>();
+            private readonly Lazy<Dictionary<string, IFileInfo>> _files;
 
-            public CombinedDirectoryContents(IEnumerable<IEnumerable<IFileInfo>> listOfFiles)
+            public CombinedDirectoryContents(List<IDirectoryContents> listOfFiles)
             {
-                foreach (var files in listOfFiles)
+                _files = new Lazy<Dictionary<string, IFileInfo>>(() =>
                 {
-                    Exists = true;
-                    foreach (var file in files)
+                    var directoryFiles = new Dictionary<string, IFileInfo>();
+                    foreach (var files in listOfFiles)
                     {
-                        if (!_files.ContainsKey(file.Name))
+                        foreach (var file in files)
                         {
-                            _files.Add(file.Name, file);
+                            if (!directoryFiles.ContainsKey(file.Name))
+                            {
+                                directoryFiles.Add(file.Name, file);
+                            }
                         }
                     }
-                }
+                    return directoryFiles;
+                });
             }
 
             public IEnumerator<IFileInfo> GetEnumerator()
             {
-                return _files.Values.GetEnumerator();
+                return _files.Value.Values.GetEnumerator();
             }
 
             IEnumerator IEnumerable.GetEnumerator()
             {
-                return _files.Values.GetEnumerator();
+                return _files.Value.Values.GetEnumerator();
             }
 
-            public bool Exists { get; }
+            // This directory exists because it is created only when there is existing IDrectoryContents to merge.
+            public bool Exists { get { return true; } }
         }
 
         private class CombinedFileChangeToken : IChangeToken
         {
-            private readonly IEnumerable<IChangeToken> _changeTokens;
+            private readonly List<IChangeToken> _changeTokens;
 
-            public CombinedFileChangeToken(IEnumerable<IChangeToken> changeTokens)
+            public CombinedFileChangeToken(List<IChangeToken> changeTokens)
             {
                 _changeTokens = changeTokens ?? new List<IChangeToken>();
             }
 
             public IDisposable RegisterChangeCallback(Action<object> callback, object state)
             {
-                return new Disposables(_changeTokens.Where(changeToken => changeToken.ActiveChangeCallbacks).Select(changeToken => changeToken.RegisterChangeCallback(callback, state)).ToList());
+                var disposables = new List<IDisposable>();
+                foreach (var changeToken in _changeTokens)
+                {
+                    var disposable = changeToken.RegisterChangeCallback(callback, state);
+                    disposables.Add(disposable);
+                }
+                return new Disposables(disposables);
             }
 
             public bool HasChanged
@@ -146,9 +171,9 @@ namespace Microsoft.AspNet.FileProviders
 
             private class Disposables : IDisposable
             {
-                private readonly IEnumerable<IDisposable> _disposables;
+                private readonly List<IDisposable> _disposables;
 
-                public Disposables(IEnumerable<IDisposable> disposables)
+                public Disposables(List<IDisposable> disposables)
                 {
                     _disposables = disposables;
                 }
