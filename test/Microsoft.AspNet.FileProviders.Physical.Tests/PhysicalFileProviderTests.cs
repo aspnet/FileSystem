@@ -465,6 +465,20 @@ namespace Microsoft.AspNet.FileProviders
             }
         }
 
+
+        [Fact]
+        public void Token_For_PathStartigWithSlash_Filters()
+        {
+            using (var root = new DisposableFileSystem())
+            {
+                var provider = new PhysicalFileProvider(root.RootPath);
+                var path = Path.GetFullPath(Path.Combine(root.RootPath, ""));
+                var token = provider.Watch("/filename");
+
+                Assert.Same(NoopChangeToken.Singleton, token);
+            }
+        }
+
         [Fact]
         public async Task Token_Fired_For_File_Or_Directory_Create_And_Delete()
         {
