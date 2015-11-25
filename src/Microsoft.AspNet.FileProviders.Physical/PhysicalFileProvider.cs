@@ -81,12 +81,6 @@ namespace Microsoft.AspNet.FileProviders
                 return new NotFoundFileInfo(subpath);
             }
 
-            // Relative paths starting with a leading slash okay
-            if (subpath.StartsWith("/", StringComparison.Ordinal))
-            {
-                subpath = subpath.Substring(1);
-            }
-
             // Absolute paths not permitted.
             if (Path.IsPathRooted(subpath))
             {
@@ -120,12 +114,6 @@ namespace Microsoft.AspNet.FileProviders
                 if (subpath == null)
                 {
                     return new NotFoundDirectoryContents();
-                }
-
-                // Relative paths starting with a leading slash okay
-                if (subpath.StartsWith("/", StringComparison.Ordinal))
-                {
-                    subpath = subpath.Substring(1);
                 }
 
                 // Absolute paths not permitted.
@@ -177,12 +165,6 @@ namespace Microsoft.AspNet.FileProviders
             if (filter == null)
             {
                 return NoopChangeToken.Singleton;
-            }
-
-            // Relative paths starting with a leading slash okay
-            if (filter.StartsWith("/", StringComparison.Ordinal))
-            {
-                filter = filter.Substring(1);
             }
 
             // Absolute paths not permitted.

@@ -25,7 +25,7 @@ namespace Microsoft.AspNet.FileProviders
             Assert.NotNull(info);
             Assert.True(info.Exists);
 
-            info = provider.GetFileInfo("/File.txt");
+            info = provider.GetFileInfo("File.txt");
             Assert.NotNull(info);
             Assert.True(info.Exists);
         }
@@ -452,15 +452,13 @@ namespace Microsoft.AspNet.FileProviders
             }
         }
 
-        [ConditionalFact]
-        [OSSkipCondition(OperatingSystems.Linux, SkipReason = "Skipping until #104 is resolved.")]
-        [OSSkipCondition(OperatingSystems.MacOSX, SkipReason = "Skipping until #104 is resolved.")]
+        [Fact]
         public void Token_For_AbsolutePath_Filters()
         {
             using (var root = new DisposableFileSystem())
             {
                 var provider = new PhysicalFileProvider(root.RootPath);
-                var path = Path.Combine(root.RootPath, "filename");
+                var path = Path.GetFullPath(Path.Combine(root.RootPath, "filename"));
                 var token = provider.Watch(path);
 
                 Assert.Same(NoopChangeToken.Singleton, token);
@@ -519,7 +517,7 @@ namespace Microsoft.AspNet.FileProviders
                 string folderName = Guid.NewGuid().ToString();
 
                 int tokenCount = 0;
-                var filetoken = provider.Watch("/" + folderName + "/");
+                var filetoken = provider.Watch(folderName + "/");
                 filetoken.RegisterChangeCallback(_ => { tokenCount++; }, null);
 
                 var folderPath = Path.Combine(root.RootPath, folderName);
@@ -529,14 +527,14 @@ namespace Microsoft.AspNet.FileProviders
                 await Task.Delay(WaitTimeForTokenToFire);
                 Assert.Equal(1, tokenCount);
 
-                filetoken = provider.Watch("/" + folderName + "/");
+                filetoken = provider.Watch(folderName + "/");
                 filetoken.RegisterChangeCallback(_ => { tokenCount++; }, null);
 
                 File.AppendAllText(Path.Combine(folderPath, fileName), "UpdatedContent");
                 await Task.Delay(WaitTimeForTokenToFire);
                 Assert.Equal(2, tokenCount);
 
-                filetoken = provider.Watch("/" + folderName + "/");
+                filetoken = provider.Watch(folderName + "/");
                 filetoken.RegisterChangeCallback(_ => { tokenCount++; }, null);
 
                 File.Delete(Path.Combine(folderPath, fileName));
@@ -556,7 +554,7 @@ namespace Microsoft.AspNet.FileProviders
 
                 int tokenCount = 0;
                 // Matches file/directory with this name.
-                var filetoken = provider.Watch("/" + directoryName);
+                var filetoken = provider.Watch(directoryName);
                 filetoken.RegisterChangeCallback(_ => { tokenCount++; }, null);
 
                 Directory.CreateDirectory(Path.Combine(root.RootPath, directoryName));
@@ -564,7 +562,7 @@ namespace Microsoft.AspNet.FileProviders
                 Assert.Equal(1, tokenCount);
 
                 // Matches file/directory with this name.
-                filetoken = provider.Watch("/" + fileName);
+                filetoken = provider.Watch( fileName);
                 filetoken.RegisterChangeCallback(_ => { tokenCount++; }, null);
 
                 File.WriteAllText(Path.Combine(root.RootPath, fileName), "Content");
@@ -705,20 +703,16 @@ namespace Microsoft.AspNet.FileProviders
             using (var root = new DisposableFileSystem())
             {
                 var provider = new PhysicalFileProvider(root.RootPath);
-                var token1 = provider.Watch("/a/b");
-                var token2 = provider.Watch("a/b");
-                var token3 = provider.Watch(@"a\b");
+                var token1 = provider.Watch("a/b");
+                var token2 = provider.Watch(@"a\b");
 
                 Assert.Equal(token2, token1);
-                Assert.Equal(token3, token2);
 
                 Assert.True(token1.ActiveChangeCallbacks);
                 Assert.True(token2.ActiveChangeCallbacks);
-                Assert.True(token3.ActiveChangeCallbacks);
 
                 Assert.False(token1.HasChanged);
                 Assert.False(token2.HasChanged);
-                Assert.False(token3.HasChanged);
             }
         }
 
