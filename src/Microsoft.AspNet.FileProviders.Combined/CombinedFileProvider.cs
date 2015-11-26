@@ -1,17 +1,13 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Extensions.Primitives;
 
 namespace Microsoft.AspNet.FileProviders
 {
     /// <summary>
-    /// Looks up files using embedded resources in the specified assembly.
-    /// This file provider is case sensitive.
+    /// Looks up files using a list of <see cref="IFileProvider"/>.
     /// </summary>
     public class CombinedFileProvider : IFileProvider
     {
@@ -23,7 +19,7 @@ namespace Microsoft.AspNet.FileProviders
         /// <param name="fileProviders"></param>
         public CombinedFileProvider(params IFileProvider[] fileProviders)
         {
-            _fileProviders = fileProviders;
+            _fileProviders = fileProviders ?? new IFileProvider[0];
         }
 
         /// <summary>
@@ -84,122 +80,6 @@ namespace Microsoft.AspNet.FileProviders
             }
             var combinedFileChangeToken = new CombinedFileChangeToken(activeChangeTokens);
             return combinedFileChangeToken;
-        }
-
-        private class CombinedDirectoryContents : IDirectoryContents
-        {
-            private readonly Lazy<List<IDirectoryContents>> _directoriesContents;
-            private readonly Lazy<List<IFileInfo>> _files;
-            private readonly Lazy<bool> _exists;
-
-            public CombinedDirectoryContents(IFileProvider[] fileProviders, string subpath)
-            {
-                _directoriesContents =new Lazy<List<IDirectoryContents>>(() =>
-                {
-                    var directories =new List<IDirectoryContents>();
-                    foreach (var fileProvider in fileProviders)
-                    {
-                        var directoryContents = fileProvider.GetDirectoryContents(subpath);
-                        if (directoryContents != null && directoryContents.Exists)
-                        {
-                            directories.Add(directoryContents);
-                        }
-                    }
-                    return directories;
-                }
-                );
-
-                _files = new Lazy<List<IFileInfo>>(() =>
-                {
-                    var files = new List<IFileInfo>();
-                    var names = new HashSet<string>();
-
-                    var directories = _directoriesContents.Value;
-                    for (int i = 0; i < directories.Count; i++)
-                    {
-                        var directoryContents = directories[i];
-                        foreach (var file in directoryContents)
-                        {
-                            if (names.Add(file.Name))
-                            {
-                                files.Add(file);
-                            }
-                        }
-                    }
-                    return files;
-                });
-
-                _exists = new Lazy<bool>(() =>
-                {
-                    var directories = _directoriesContents.Value;
-                    var exists = directories.Count > 0;
-                    return exists;
-                });
-            }
-
-            public IEnumerator<IFileInfo> GetEnumerator()
-            {
-                return _files.Value.GetEnumerator();
-            }
-
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return _files.Value.GetEnumerator();
-            }
-
-            // This directory exists because it is created only when there is existing IDrectoryContents to merge.
-            public bool Exists { get { return _exists.Value; } }
-        }
-
-        private class CombinedFileChangeToken : IChangeToken
-        {
-            private readonly List<IChangeToken> _changeTokens;
-
-            public CombinedFileChangeToken(List<IChangeToken> changeTokens)
-            {
-                _changeTokens = changeTokens;
-            }
-
-            public IDisposable RegisterChangeCallback(Action<object> callback, object state)
-            {
-                var disposables = new List<IDisposable>();
-                for (int i = 0; i < _changeTokens.Count; i++)
-                {
-                    var disposable = _changeTokens[i].RegisterChangeCallback(callback, state);
-                    disposables.Add(disposable);
-                }
-                return new Disposables(disposables);
-            }
-
-            public bool HasChanged
-            {
-                get { return _changeTokens.Any(_ => _.HasChanged); }
-            }
-
-            public bool ActiveChangeCallbacks
-            {
-                get { return _changeTokens.Any(_ => _.ActiveChangeCallbacks); }
-            }
-
-            private class Disposables : IDisposable
-            {
-                private readonly List<IDisposable> _disposables;
-
-                public Disposables(List<IDisposable> disposables)
-                {
-                    _disposables = disposables;
-                }
-                public void Dispose()
-                {
-                    if (_disposables != null)
-                    {
-                        for (int i = 0; i < _disposables.Count; i++)
-                        {
-                            _disposables[i].Dispose();
-                        }
-                    }
-                }
-            }
         }
     }
 }

@@ -2,13 +2,13 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNet.FileProviders.Combined.Tests.TestUtility;
-using Xunit;
-using System.Collections.Generic;
 using Microsoft.Extensions.Primitives;
+using Xunit;
 
-namespace Microsoft.AspNet.FileProviders.Embedded.Tests
+namespace Microsoft.AspNet.FileProviders.Combined.Tests
 {
     public class CombinedFileProviderTests
     {
@@ -65,9 +65,7 @@ namespace Microsoft.AspNet.FileProviders.Embedded.Tests
             var fileInfo = provider.GetFileInfo(fileName);
 
             // Assert
-            Assert.NotNull(fileInfo);
-            Assert.True(fileInfo.Exists);
-            Assert.Equal(expectedFileInfo, fileInfo);
+            Assert.Same(expectedFileInfo, fileInfo);
         }
 
         [Fact]
@@ -104,20 +102,17 @@ namespace Microsoft.AspNet.FileProviders.Embedded.Tests
         public void GetDirectoryContents_ReturnsCombinaisionOFFiles()
         {
             // Arrange
-            IFileInfo file1 = new MockFileInfo("File1"),
-                file2 = new MockFileInfo("File2"),
-                file2Bis = new MockFileInfo("File2"),
-                file3 = new MockFileInfo("File3");
+            var file1 = new MockFileInfo("File1");
+            var file2 = new MockFileInfo("File2");
+            var file2Bis = new MockFileInfo("File2");
+            var file3 = new MockFileInfo("File3");
             var provider = new CombinedFileProvider(
                 new MockFileProvider(
                     file1,
-                    file2
-                    ),
+                    file2),
                 new MockFileProvider(
                     file2Bis,
-                    file3
-                    )
-                );
+                    file3));
 
             // Act
             var files = provider.GetDirectoryContents(string.Empty);
@@ -126,13 +121,13 @@ namespace Microsoft.AspNet.FileProviders.Embedded.Tests
             Assert.NotNull(files);
             Assert.True(files.Exists);
             Assert.Collection(files.OrderBy(f => f.Name, StringComparer.Ordinal),
-                file => Assert.Equal(file1, file),
-                file => Assert.Equal(file2, file),
-                file => Assert.Equal(file3, file));
+                file => Assert.Same(file1, file),
+                file => Assert.Same(file2, file),
+                file => Assert.Same(file3, file));
         }
 
         [Fact]
-        public void GetDirectoryContents_ReturnsCombinaisionOFFiles_WhenSomeFileProviderRetunsNoContent()
+        public void GetDirectoryContents_ReturnsCombinaitionOFFiles_WhenSomeFileProviderRetunsNoContent()
         {
             // Arrange
             IFileInfo folderAFile1 = new MockFileInfo("FolderA/File1"),
@@ -183,7 +178,7 @@ namespace Microsoft.AspNet.FileProviders.Embedded.Tests
         {
             // Arrange
             var provider = new CombinedFileProvider(
-                    new MockFileProvider()
+                new MockFileProvider()
                 );
 
             // Act
@@ -202,10 +197,10 @@ namespace Microsoft.AspNet.FileProviders.Embedded.Tests
             var secondChangeToken = new MockChangeToken();
             var thirdChangeToken = new MockChangeToken();
             var provider = new CombinedFileProvider(
-                new MockFileProvider(new KeyValuePair<string, IChangeToken>("pattern", firstChangeToken),
-                                     new KeyValuePair<string, IChangeToken>("2ndpattern", secondChangeToken)),
-                new MockFileProvider(new KeyValuePair<string, IChangeToken>("pattern", thirdChangeToken))
-                );
+                new MockFileProvider(
+                    new KeyValuePair<string, IChangeToken>("pattern", firstChangeToken),
+                    new KeyValuePair<string, IChangeToken>("2ndpattern", secondChangeToken)),
+                new MockFileProvider(new KeyValuePair<string, IChangeToken>("pattern", thirdChangeToken)));
 
             // Act
             var changeToken = provider.Watch("pattern");
@@ -230,19 +225,22 @@ namespace Microsoft.AspNet.FileProviders.Embedded.Tests
             thirdChangeToken.HasChanged = false;
 
             // Register callback
-            Assert.Equal(0, firstChangeToken.NbOfCallback);
-            Assert.Equal(0, secondChangeToken.NbOfCallback);
-            Assert.Equal(0, thirdChangeToken.NbOfCallback);
+            Assert.Equal(0, firstChangeToken.Callsback.Count);
+            Assert.Equal(0, secondChangeToken.Callsback.Count);
+            Assert.Equal(0, thirdChangeToken.Callsback.Count);
             var hasBeenCalled = false;
             object result = null;
+            object state = new object();
             changeToken.RegisterChangeCallback(item =>
             {
                 hasBeenCalled = true;
                 result = item;
-            }, null);
-            Assert.Equal(1, firstChangeToken.NbOfCallback);
-            Assert.Equal(0, secondChangeToken.NbOfCallback);
-            Assert.Equal(1, thirdChangeToken.NbOfCallback);
+            }, state);
+            Assert.Equal(1, firstChangeToken.Callsback.Count);
+            Assert.Same(state, firstChangeToken.Callsback[0].Item2);
+            Assert.Equal(0, secondChangeToken.Callsback.Count);
+            Assert.Equal(1, thirdChangeToken.Callsback.Count);
+            Assert.Same(state, thirdChangeToken.Callsback[0].Item2);
             var expectedResult = new object();
             firstChangeToken.RaiseCallback(expectedResult);
             Assert.True(hasBeenCalled);

@@ -21,7 +21,6 @@
     "dotnet5.4": {
       "dependencies": {
         "System.Collections": "4.0.11-*",
-        "System.Reflection": "4.0.10-*",
         "System.Runtime.Extensions": "4.0.11-*"
       }
     }

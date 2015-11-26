@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Primitives;
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +11,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests.TestUtility
 {
     internal class MockChangeToken : IChangeToken
     {
-        private readonly List<Action<object>> _callsback = new List<Action<object>>();
+        private readonly List<Tuple<Action<object>, object>> _callsback = new List<Tuple<Action<object>, object>>();
 
         public bool ActiveChangeCallbacks
         {
@@ -23,17 +26,17 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests.TestUtility
             get; set;
         }
 
-        public int NbOfCallback
+        public List<Tuple<Action<object>, object>> Callsback
         {
             get
             {
-                return _callsback.Count;
+                return _callsback;
             }
         }
 
         public IDisposable RegisterChangeCallback(Action<object> callback, object state)
         {
-            _callsback.Add(callback);
+            _callsback.Add(Tuple.Create(callback, state));
             return new MockDisposable();
         }
 
@@ -41,7 +44,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests.TestUtility
         {
             foreach(var callback in _callsback)
             {
-                callback(item);
+                callback.Item1(item);
             }
         }
 

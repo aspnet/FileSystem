@@ -8,7 +8,7 @@ using Microsoft.Extensions.Primitives;
 
 namespace Microsoft.AspNet.FileProviders.Combined.Tests.TestUtility
 {
-    internal class MockFileProvider : IFileProvider
+    public class MockFileProvider : IFileProvider
     {
         private IEnumerable<IFileInfo> _files;
         private Dictionary<string, IChangeToken> _changeTokens;
@@ -23,8 +23,10 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests.TestUtility
 
         public MockFileProvider(params KeyValuePair<string, IChangeToken>[] changeTokens)
         {
-            _changeTokens = changeTokens.ToDictionary(changeToken => changeToken.Key,
-                                                      changeToken => changeToken.Value);
+            _changeTokens = changeTokens.ToDictionary(
+                changeToken => changeToken.Key,
+                changeToken => changeToken.Value,
+                StringComparer.Ordinal);
         }
 
         public IDirectoryContents GetDirectoryContents(string subpath)
@@ -50,7 +52,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests.TestUtility
 
         public IChangeToken Watch(string filter)
         {
-            if(_changeTokens != null && _changeTokens.ContainsKey(filter))
+            if (_changeTokens != null && _changeTokens.ContainsKey(filter))
             {
                 return _changeTokens[filter];
             }
