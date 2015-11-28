@@ -20,10 +20,14 @@ namespace Microsoft.AspNet.FileProviders
         public IDisposable RegisterChangeCallback(Action<object> callback, object state)
         {
             var disposables = new List<IDisposable>();
-            for (int i = 0; i < _changeTokens.Count; i++)
+            for (var i = 0; i < _changeTokens.Count; i++)
             {
-                var disposable = _changeTokens[i].RegisterChangeCallback(callback, state);
-                disposables.Add(disposable);
+                var changeToken = _changeTokens[i];
+                if (changeToken.ActiveChangeCallbacks)
+                {
+                    var disposable = _changeTokens[i].RegisterChangeCallback(callback, state);
+                    disposables.Add(disposable);
+                }
             }
             return new CombinedDisposable(disposables);
         }
@@ -37,6 +41,5 @@ namespace Microsoft.AspNet.FileProviders
         {
             get { return _changeTokens.Any(token => token.ActiveChangeCallbacks); }
         }
-
     }
 }

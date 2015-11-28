@@ -9,66 +9,75 @@ namespace Microsoft.AspNet.FileProviders
 {
     internal class CombinedDirectoryContents : IDirectoryContents
     {
-        private readonly Lazy<List<IDirectoryContents>> _directoriesContents;
-        private readonly Lazy<List<IFileInfo>> _files;
-        private readonly Lazy<bool> _exists;
+        private readonly IFileProvider[] _fileProviders;
+        private readonly string _subPath;
+        private List<IFileInfo> _files;
+        private bool _exists;
+        private List<IDirectoryContents> _directories;
 
         public CombinedDirectoryContents(IFileProvider[] fileProviders, string subpath)
         {
-            _directoriesContents =new Lazy<List<IDirectoryContents>>(() =>
+            _fileProviders = fileProviders;
+            _subPath = subpath;
+        }
+
+        private void EnsureDirectoriesAreInitialized()
+        {
+            if (_directories == null)
             {
-                var directories =new List<IDirectoryContents>();
-                foreach (var fileProvider in fileProviders)
+                _directories = new List<IDirectoryContents>();
+                foreach (var fileProvider in _fileProviders)
                 {
-                    var directoryContents = fileProvider.GetDirectoryContents(subpath);
+                    var directoryContents = fileProvider.GetDirectoryContents(_subPath);
                     if (directoryContents != null && directoryContents.Exists)
                     {
-                        directories.Add(directoryContents);
+                        _exists = true;
+                        _directories.Add(directoryContents);
                     }
                 }
-                return directories;
             }
-                );
+        }
 
-            _files = new Lazy<List<IFileInfo>>(() =>
+        private void EnsureFilesAreInitialized()
+        {
+            EnsureDirectoriesAreInitialized();
+            if (_files == null)
             {
-                var files = new List<IFileInfo>();
+                _files = new List<IFileInfo>();
                 var names = new HashSet<string>();
-
-                var directories = _directoriesContents.Value;
-                for (int i = 0; i < directories.Count; i++)
+                for (var i = 0; i < _directories.Count; i++)
                 {
-                    var directoryContents = directories[i];
+                    var directoryContents = _directories[i];
                     foreach (var file in directoryContents)
                     {
                         if (names.Add(file.Name))
                         {
-                            files.Add(file);
+                            _files.Add(file);
                         }
                     }
                 }
-                return files;
-            });
-
-            _exists = new Lazy<bool>(() =>
-            {
-                var directories = _directoriesContents.Value;
-                var exists = directories.Count > 0;
-                return exists;
-            });
+            }
         }
 
         public IEnumerator<IFileInfo> GetEnumerator()
         {
-            return _files.Value.GetEnumerator();
+            EnsureFilesAreInitialized();
+            return _files.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return _files.Value.GetEnumerator();
+            EnsureFilesAreInitialized();
+            return _files.GetEnumerator();
         }
 
-        // This directory exists because it is created only when there is existing IDrectoryContents to merge.
-        public bool Exists { get { return _exists.Value; } }
+        public bool Exists
+        {
+            get
+            {
+                EnsureDirectoriesAreInitialized();
+                return _exists;
+            }
+        }
     }
 }

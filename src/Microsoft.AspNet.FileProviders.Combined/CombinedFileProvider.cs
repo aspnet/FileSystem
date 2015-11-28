@@ -63,22 +63,22 @@ namespace Microsoft.AspNet.FileProviders
         public IChangeToken Watch(string pattern)
         {
             // Watch all file providers
-            var activeChangeTokens = new List<IChangeToken>();
+            var changeTokens = new List<IChangeToken>();
             foreach (var fileProvider in _fileProviders)
             {
                 var changeToken = fileProvider.Watch(pattern);
-                if (changeToken != null && changeToken.ActiveChangeCallbacks)
+                if (changeToken != null)
                 {
-                    activeChangeTokens.Add(changeToken);
+                    changeTokens.Add(changeToken);
                 }
             }
 
             // There is no change token with active change callbacks
-            if (activeChangeTokens.Count == 0)
+            if (changeTokens.Count == 0)
             {
                 return NoopChangeToken.Singleton;
             }
-            var combinedFileChangeToken = new CombinedFileChangeToken(activeChangeTokens);
+            var combinedFileChangeToken = new CombinedFileChangeToken(changeTokens);
             return combinedFileChangeToken;
         }
     }

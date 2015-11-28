@@ -49,17 +49,13 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
             var provider = new CombinedFileProvider(
                 new MockFileProvider(
                     new MockFileInfo("FileA"),
-                    new MockFileInfo("FileB")
-                    ),
+                    new MockFileInfo("FileB")),
                 new MockFileProvider(
                     expectedFileInfo,
-                    new MockFileInfo("File2")
-                    ),
+                    new MockFileInfo("File2")),
                 new MockFileProvider(
                     new MockFileInfo(fileName),
-                    new MockFileInfo("File3")
-                    )
-                );
+                    new MockFileInfo("File3")));
 
             // Act
             var fileInfo = provider.GetFileInfo(fileName);
@@ -130,24 +126,21 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
         public void GetDirectoryContents_ReturnsCombinaitionOFFiles_WhenSomeFileProviderRetunsNoContent()
         {
             // Arrange
-            IFileInfo folderAFile1 = new MockFileInfo("FolderA/File1"),
-                folderAFile2 = new MockFileInfo("FolderA/File2"),
-                folderAFile2Bis = new MockFileInfo("FolderA/File2"),
-                folderBFile1 = new MockFileInfo("FolderB/File1"),
-                folderBFile2 = new MockFileInfo("FolderB/File2"),
-                folderCFile3 = new MockFileInfo("FolderC/File3");
+            var folderAFile1 = new MockFileInfo("FolderA/File1");
+            var folderAFile2 = new MockFileInfo("FolderA/File2");
+            var folderAFile2Bis = new MockFileInfo("FolderA/File2");
+            var folderBFile1 = new MockFileInfo("FolderB/File1");
+            var folderBFile2 = new MockFileInfo("FolderB/File2");
+            var folderCFile3 = new MockFileInfo("FolderC/File3");
             var provider = new CombinedFileProvider(
                 new MockFileProvider(
                     folderAFile1,
                     folderAFile2,
-                    folderBFile2
-                    ),
+                    folderBFile2),
                 new MockFileProvider(
                     folderAFile2Bis,
                     folderBFile1,
-                    folderCFile3
-                    )
-                );
+                    folderCFile3));
 
             // Act
             var files = provider.GetDirectoryContents("FolderC/");
@@ -178,8 +171,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
         {
             // Arrange
             var provider = new CombinedFileProvider(
-                new MockFileProvider()
-                );
+                new MockFileProvider());
 
             // Act
             var changeToken = provider.Watch("DoesntExist*Pattern");
@@ -190,7 +182,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
         }
 
         [Fact]
-        public void Watch_CombinedChangeToken()
+        public void Watch_CombinedChangeToken_HasChangedIsCorrectlyComputed()
         {
             // Arrange
             var firstChangeToken = new MockChangeToken();
@@ -207,7 +199,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
 
             // Assert
             Assert.NotNull(changeToken);
-            Assert.True(changeToken.ActiveChangeCallbacks);
+            Assert.False(changeToken.ActiveChangeCallbacks);
             Assert.False(changeToken.HasChanged);
 
             // HasChanged update
@@ -222,12 +214,33 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
             // third change token
             thirdChangeToken.HasChanged = true;
             Assert.True(changeToken.HasChanged);
-            thirdChangeToken.HasChanged = false;
+        }
+
+        [Fact]
+        public void Watch_CombinedChangeToken_RegisterChangeCallbackCorrectlyTransmitsAllParameters()
+        {
+            // Arrange
+            var firstChangeToken = new MockChangeToken { ActiveChangeCallbacks = true };
+            var secondChangeToken = new MockChangeToken();
+            var thirdChangeToken = new MockChangeToken { ActiveChangeCallbacks = true };
+            var provider = new CombinedFileProvider(
+                new MockFileProvider(
+                    new KeyValuePair<string, IChangeToken>("pattern", firstChangeToken),
+                    new KeyValuePair<string, IChangeToken>("2ndpattern", secondChangeToken)),
+                new MockFileProvider(new KeyValuePair<string, IChangeToken>("pattern", thirdChangeToken)));
+
+            // Act
+            var changeToken = provider.Watch("pattern");
+
+            // Assert
+            Assert.NotNull(changeToken);
+            Assert.True(changeToken.ActiveChangeCallbacks);
+            Assert.False(changeToken.HasChanged);
 
             // Register callback
-            Assert.Equal(0, firstChangeToken.Callsback.Count);
-            Assert.Equal(0, secondChangeToken.Callsback.Count);
-            Assert.Equal(0, thirdChangeToken.Callsback.Count);
+            Assert.Equal(0, firstChangeToken.Callbacks.Count);
+            Assert.Equal(0, secondChangeToken.Callbacks.Count);
+            Assert.Equal(0, thirdChangeToken.Callbacks.Count);
             var hasBeenCalled = false;
             object result = null;
             object state = new object();
@@ -236,15 +249,61 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
                 hasBeenCalled = true;
                 result = item;
             }, state);
-            Assert.Equal(1, firstChangeToken.Callsback.Count);
-            Assert.Same(state, firstChangeToken.Callsback[0].Item2);
-            Assert.Equal(0, secondChangeToken.Callsback.Count);
-            Assert.Equal(1, thirdChangeToken.Callsback.Count);
-            Assert.Same(state, thirdChangeToken.Callsback[0].Item2);
+            Assert.Equal(1, firstChangeToken.Callbacks.Count);
+            Assert.Same(state, firstChangeToken.Callbacks[0].Item2);
+            Assert.Equal(0, secondChangeToken.Callbacks.Count);
+            Assert.Equal(1, thirdChangeToken.Callbacks.Count);
+            Assert.Same(state, thirdChangeToken.Callbacks[0].Item2);
             var expectedResult = new object();
             firstChangeToken.RaiseCallback(expectedResult);
             Assert.True(hasBeenCalled);
             Assert.Equal(expectedResult, result);
+        }
+
+        [Fact]
+        public void Watch_CombinedChangeToken_RegisterChangeCallbackReturnsACombinedDisposable()
+        {
+            // Arrange
+            var firstChangeToken = new MockChangeToken { ActiveChangeCallbacks = true };
+            var secondChangeToken = new MockChangeToken();
+            var thirdChangeToken = new MockChangeToken { ActiveChangeCallbacks = true };
+            var provider = new CombinedFileProvider(
+                new MockFileProvider(
+                    new KeyValuePair<string, IChangeToken>("pattern", firstChangeToken),
+                    new KeyValuePair<string, IChangeToken>("2ndpattern", secondChangeToken)),
+                new MockFileProvider(new KeyValuePair<string, IChangeToken>("pattern", thirdChangeToken)));
+
+            // Act
+            var changeToken = provider.Watch("pattern");
+
+            // Assert
+            Assert.NotNull(changeToken);
+            Assert.True(changeToken.ActiveChangeCallbacks);
+            Assert.False(changeToken.HasChanged);
+
+            // Register callback
+            Assert.Equal(0, firstChangeToken.Callbacks.Count);
+            Assert.Equal(0, secondChangeToken.Callbacks.Count);
+            Assert.Equal(0, thirdChangeToken.Callbacks.Count);
+            var hasBeenCalled = false;
+            object result = null;
+            object state = new object();
+            var disposable = changeToken.RegisterChangeCallback(item =>
+            {
+                hasBeenCalled = true;
+                result = item;
+            }, state);
+            Assert.Equal(1, firstChangeToken.Callbacks.Count);
+            Assert.False(firstChangeToken.Callbacks[0].Item3.Disposed);
+            Assert.Equal(0, secondChangeToken.Callbacks.Count);
+            Assert.Equal(1, thirdChangeToken.Callbacks.Count);
+            Assert.False(thirdChangeToken.Callbacks[0].Item3.Disposed);
+            disposable.Dispose();
+            Assert.Equal(1, firstChangeToken.Callbacks.Count);
+            Assert.True(firstChangeToken.Callbacks[0].Item3.Disposed);
+            Assert.Equal(0, secondChangeToken.Callbacks.Count);
+            Assert.Equal(1, thirdChangeToken.Callbacks.Count);
+            Assert.True(thirdChangeToken.Callbacks[0].Item3.Disposed);
         }
     }
 }

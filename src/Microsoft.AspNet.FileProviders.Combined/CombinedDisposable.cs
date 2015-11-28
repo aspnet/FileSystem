@@ -14,9 +14,10 @@ namespace Microsoft.AspNet.FileProviders
         {
             _disposables = disposables;
         }
+
         public void Dispose()
         {
-            for (int i = 0; i < _disposables.Count; i++)
+            for (var i = 0; i < _disposables.Count; i++)
             {
                 _disposables[i].Dispose();
             }
