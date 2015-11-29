@@ -4,19 +4,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.AspNet.FileProviders.Combined.Tests.TestUtility;
+using Microsoft.AspNet.FileProviders.Composite.Tests.TestUtility;
 using Microsoft.Extensions.Primitives;
 using Xunit;
 
-namespace Microsoft.AspNet.FileProviders.Combined.Tests
+namespace Microsoft.AspNet.FileProviders.Composite.Tests
 {
-    public class CombinedFileProviderTests
+    public class CompositeFileProviderTests
     {
         [Fact]
         public void GetFileInfo_ReturnsNotFoundFileInfo_IfNoFileProviderSpecified()
         {
             // Arrange
-            var provider = new CombinedFileProvider();
+            var provider = new CompositeFileProvider();
 
             // Act
             var fileInfo = provider.GetFileInfo("DoesNotExist.txt");
@@ -30,7 +30,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
         public void GetFileInfo_ReturnsNotFoundFileInfo_IfFileDoesNotExist()
         {
             // Arrange
-            var provider = new CombinedFileProvider(new MockFileProvider(new MockFileInfo("DoesExist.txt")));
+            var provider = new CompositeFileProvider(new MockFileProvider(new MockFileInfo("DoesExist.txt")));
 
             // Act
             var fileInfo = provider.GetFileInfo("DoesNotExist.txt");
@@ -46,7 +46,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
             // Arrange
             var fileName = "File1";
             var expectedFileInfo = new MockFileInfo(fileName);
-            var provider = new CombinedFileProvider(
+            var provider = new CompositeFileProvider(
                 new MockFileProvider(
                     new MockFileInfo("FileA"),
                     new MockFileInfo("FileB")),
@@ -68,7 +68,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
         public void GetDirectoryContents_ReturnsNonExistingEmptySequence_IfNoFileProviderSpecified()
         {
             // Arrange
-            var provider = new CombinedFileProvider();
+            var provider = new CompositeFileProvider();
 
             // Act
             var files = provider.GetDirectoryContents(string.Empty);
@@ -83,7 +83,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
         public void GetDirectoryContents_ReturnsNonExistingEmptySequence_IfResourcesDoNotExist()
         {
             // Arrange
-            var provider = new CombinedFileProvider();
+            var provider = new CompositeFileProvider();
 
             // Act
             var files = provider.GetDirectoryContents("DoesNotExist");
@@ -102,7 +102,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
             var file2 = new MockFileInfo("File2");
             var file2Bis = new MockFileInfo("File2");
             var file3 = new MockFileInfo("File3");
-            var provider = new CombinedFileProvider(
+            var provider = new CompositeFileProvider(
                 new MockFileProvider(
                     file1,
                     file2),
@@ -132,7 +132,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
             var folderBFile1 = new MockFileInfo("FolderB/File1");
             var folderBFile2 = new MockFileInfo("FolderB/File2");
             var folderCFile3 = new MockFileInfo("FolderC/File3");
-            var provider = new CombinedFileProvider(
+            var provider = new CompositeFileProvider(
                 new MockFileProvider(
                     folderAFile1,
                     folderAFile2,
@@ -156,7 +156,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
         public void Watch_ReturnsNoopChangeToken_IfNoFileProviderSpecified()
         {
             // Arrange
-            var provider = new CombinedFileProvider();
+            var provider = new CompositeFileProvider();
 
             // Act
             var changeToken = provider.Watch("DoesNotExist*Pattern");
@@ -170,7 +170,7 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
         public void Watch_ReturnsNoopChangeToken_IfNoWatcherReturnedByFileProviders()
         {
             // Arrange
-            var provider = new CombinedFileProvider(
+            var provider = new CompositeFileProvider(
                 new MockFileProvider());
 
             // Act
@@ -182,13 +182,13 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
         }
 
         [Fact]
-        public void Watch_CombinedChangeToken_HasChangedIsCorrectlyComputed()
+        public void Watch_CompositeChangeToken_HasChangedIsCorrectlyComputed()
         {
             // Arrange
             var firstChangeToken = new MockChangeToken();
             var secondChangeToken = new MockChangeToken();
             var thirdChangeToken = new MockChangeToken();
-            var provider = new CombinedFileProvider(
+            var provider = new CompositeFileProvider(
                 new MockFileProvider(
                     new KeyValuePair<string, IChangeToken>("pattern", firstChangeToken),
                     new KeyValuePair<string, IChangeToken>("2ndpattern", secondChangeToken)),
@@ -217,13 +217,13 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
         }
 
         [Fact]
-        public void Watch_CombinedChangeToken_RegisterChangeCallbackCorrectlyTransmitsAllParameters()
+        public void Watch_CompositeChangeToken_RegisterChangeCallbackCorrectlyTransmitsAllParameters()
         {
             // Arrange
             var firstChangeToken = new MockChangeToken { ActiveChangeCallbacks = true };
             var secondChangeToken = new MockChangeToken();
             var thirdChangeToken = new MockChangeToken { ActiveChangeCallbacks = true };
-            var provider = new CombinedFileProvider(
+            var provider = new CompositeFileProvider(
                 new MockFileProvider(
                     new KeyValuePair<string, IChangeToken>("pattern", firstChangeToken),
                     new KeyValuePair<string, IChangeToken>("2ndpattern", secondChangeToken)),
@@ -261,13 +261,13 @@ namespace Microsoft.AspNet.FileProviders.Combined.Tests
         }
 
         [Fact]
-        public void Watch_CombinedChangeToken_RegisterChangeCallbackReturnsACombinedDisposable()
+        public void Watch_CompositeChangeToken_RegisterChangeCallbackReturnsACompositeDisposable()
         {
             // Arrange
             var firstChangeToken = new MockChangeToken { ActiveChangeCallbacks = true };
             var secondChangeToken = new MockChangeToken();
             var thirdChangeToken = new MockChangeToken { ActiveChangeCallbacks = true };
-            var provider = new CombinedFileProvider(
+            var provider = new CompositeFileProvider(
                 new MockFileProvider(
                     new KeyValuePair<string, IChangeToken>("pattern", firstChangeToken),
                     new KeyValuePair<string, IChangeToken>("2ndpattern", secondChangeToken)),

@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.AspNet.FileProviders.Combined.Tests.TestUtility
+namespace Microsoft.AspNet.FileProviders.Composite.Tests.TestUtility
 {
     public class MockDisposable : IDisposable
     {

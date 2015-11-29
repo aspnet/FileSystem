@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace Microsoft.AspNet.FileProviders
 {
-    internal class CombinedDirectoryContents : IDirectoryContents
+    internal class CompositeDirectoryContents : IDirectoryContents
     {
         private readonly IFileProvider[] _fileProviders;
         private readonly string _subPath;
@@ -15,7 +15,7 @@ namespace Microsoft.AspNet.FileProviders
         private bool _exists;
         private List<IDirectoryContents> _directories;
 
-        public CombinedDirectoryContents(IFileProvider[] fileProviders, string subpath)
+        public CompositeDirectoryContents(IFileProvider[] fileProviders, string subpath)
         {
             _fileProviders = fileProviders;
             _subPath = subpath;

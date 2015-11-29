@@ -27,9 +27,9 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.AspNet.FileProvid
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.AspNet.FileProviders.Sources", "src\Microsoft.AspNet.FileProviders.Sources\Microsoft.AspNet.FileProviders.Sources.xproj", "{92C2C85C-D1A5-44BD-BE23-238E08471B4D}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.AspNet.FileProviders.Combined", "src\Microsoft.AspNet.FileProviders.Combined\Microsoft.AspNet.FileProviders.Combined.xproj", "{CAAF52EF-F91B-474D-AC56-FE9D96FF8254}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.AspNet.FileProviders.Composite", "src\Microsoft.AspNet.FileProviders.Composite\Microsoft.AspNet.FileProviders.Composite.xproj", "{CAAF52EF-F91B-474D-AC56-FE9D96FF8254}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.AspNet.FileProviders.Combined.Tests", "test\Microsoft.AspNet.FileProviders.Combined.Tests\Microsoft.AspNet.FileProviders.Combined.Tests.xproj", "{C2EA9BD0-C986-4B60-9E45-5EA51E1EA494}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.AspNet.FileProviders.Composite.Tests", "test\Microsoft.AspNet.FileProviders.Composite.Tests\Microsoft.AspNet.FileProviders.Composite.Tests.xproj", "{C2EA9BD0-C986-4B60-9E45-5EA51E1EA494}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

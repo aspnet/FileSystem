@@ -6,11 +6,11 @@ using System.Collections.Generic;
 
 namespace Microsoft.AspNet.FileProviders
 {
-    internal class CombinedDisposable : IDisposable
+    internal class CompositeDisposable : IDisposable
     {
         private readonly List<IDisposable> _disposables;
 
-        public CombinedDisposable(List<IDisposable> disposables)
+        public CompositeDisposable(List<IDisposable> disposables)
         {
             _disposables = disposables;
         }

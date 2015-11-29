@@ -8,11 +8,11 @@ using Microsoft.Extensions.Primitives;
 
 namespace Microsoft.AspNet.FileProviders
 {
-    internal class CombinedFileChangeToken : IChangeToken
+    internal class CompositeFileChangeToken : IChangeToken
     {
         private readonly List<IChangeToken> _changeTokens;
 
-        public CombinedFileChangeToken(List<IChangeToken> changeTokens)
+        public CompositeFileChangeToken(List<IChangeToken> changeTokens)
         {
             _changeTokens = changeTokens;
         }
@@ -29,7 +29,7 @@ namespace Microsoft.AspNet.FileProviders
                     disposables.Add(disposable);
                 }
             }
-            return new CombinedDisposable(disposables);
+            return new CompositeDisposable(disposables);
         }
 
         public bool HasChanged

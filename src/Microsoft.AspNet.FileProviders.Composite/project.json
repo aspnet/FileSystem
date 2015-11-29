@@ -4,7 +4,7 @@
     "warningsAsErrors": true,
     "keyFile": "../../tools/Key.snk"
   },
-  "description": "Implementation of ASP.NET 5 file provider abstractions to combine file providers.",
+  "description": "Implementation of ASP.NET 5 file provider abstractions to compose file providers.",
   "repository": {
     "type": "git",
     "url": "git://github.com/aspnet/filesystem"

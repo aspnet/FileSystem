@@ -9,15 +9,15 @@ namespace Microsoft.AspNet.FileProviders
     /// <summary>
     /// Looks up files using a list of <see cref="IFileProvider"/>.
     /// </summary>
-    public class CombinedFileProvider : IFileProvider
+    public class CompositeFileProvider : IFileProvider
     {
         private readonly IFileProvider[] _fileProviders;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CombinedFileProvider" /> class using a list of file provider.
+        /// Initializes a new instance of the <see cref="CompositeFileProvider" /> class using a list of file provider.
         /// </summary>
         /// <param name="fileProviders"></param>
-        public CombinedFileProvider(params IFileProvider[] fileProviders)
+        public CompositeFileProvider(params IFileProvider[] fileProviders)
         {
             _fileProviders = fileProviders ?? new IFileProvider[0];
         }
@@ -49,7 +49,7 @@ namespace Microsoft.AspNet.FileProviders
         /// When there is multiple <see cref="IFileInfo"/> with the same Name property, only the first one is included on the results.</returns>
         public IDirectoryContents GetDirectoryContents(string subpath)
         {
-            var directoryContents = new CombinedDirectoryContents(_fileProviders, subpath);
+            var directoryContents = new CompositeDirectoryContents(_fileProviders, subpath);
             return directoryContents;
         }
 
@@ -78,8 +78,8 @@ namespace Microsoft.AspNet.FileProviders
             {
                 return NoopChangeToken.Singleton;
             }
-            var combinedFileChangeToken = new CombinedFileChangeToken(changeTokens);
-            return combinedFileChangeToken;
+            var CompositeFileChangeToken = new CompositeFileChangeToken(changeTokens);
+            return CompositeFileChangeToken;
         }
     }
 }
