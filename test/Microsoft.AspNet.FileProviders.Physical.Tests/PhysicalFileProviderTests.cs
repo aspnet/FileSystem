@@ -581,7 +581,7 @@ namespace Microsoft.AspNet.FileProviders
                 Assert.Equal(1, tokenCount);
 
                 // Matches file/directory with this name.
-                filetoken = provider.Watch( fileName);
+                filetoken = provider.Watch(fileName);
                 filetoken.RegisterChangeCallback(_ => { tokenCount++; }, null);
 
                 File.WriteAllText(Path.Combine(root.RootPath, fileName), "Content");
