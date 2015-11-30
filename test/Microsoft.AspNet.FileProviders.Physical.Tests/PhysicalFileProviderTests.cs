@@ -24,10 +24,15 @@ namespace Microsoft.AspNet.FileProviders
             var info = provider.GetFileInfo("File.txt");
             Assert.NotNull(info);
             Assert.True(info.Exists);
+        }
 
-            info = provider.GetFileInfo("File.txt");
+        [Fact]
+        public void GetFileInfo_FiltersSlashPath()
+        {
+            var provider = new PhysicalFileProvider(Directory.GetCurrentDirectory());
+            var info = provider.GetFileInfo("/File.txt");
             Assert.NotNull(info);
-            Assert.True(info.Exists);
+            Assert.False(info.Exists);
         }
 
         [Fact]
