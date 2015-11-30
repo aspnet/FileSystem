@@ -168,7 +168,7 @@ namespace Microsoft.AspNet.FileProviders.Embedded.Tests
         }
 
         [Fact]
-        public void GetDirectoryContents_ReturnsAllFilesInFileSystem(string path)
+        public void GetDirectoryContents_ReturnsAllFilesInFileSystem()
         {
             // Arrange
             var provider = new EmbeddedFileProvider(GetType().GetTypeInfo().Assembly, Namespace + ".Resources");
