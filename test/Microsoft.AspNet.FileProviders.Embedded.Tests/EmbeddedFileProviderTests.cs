@@ -167,15 +167,14 @@ namespace Microsoft.AspNet.FileProviders.Embedded.Tests
             Assert.Equal("File.txt", fileInfo.Name);
         }
 
-        [Theory]
-        [InlineData("")]
+        [Fact]
         public void GetDirectoryContents_ReturnsAllFilesInFileSystem(string path)
         {
             // Arrange
             var provider = new EmbeddedFileProvider(GetType().GetTypeInfo().Assembly, Namespace + ".Resources");
 
             // Act
-            var files = provider.GetDirectoryContents(path);
+            var files = provider.GetDirectoryContents("");
 
             // Assert
             Assert.Collection(files.OrderBy(f => f.Name, StringComparer.Ordinal),
