@@ -63,16 +63,7 @@ namespace Microsoft.AspNet.FileProviders
 
             var builder = new StringBuilder(_baseNamespace.Length + subpath.Length);
             builder.Append(_baseNamespace);
-
-            // Relative paths starting with a leading slash okay
-            if (subpath.StartsWith("/", StringComparison.Ordinal))
-            {
-                builder.Append(subpath, 1, subpath.Length - 1);
-            }
-            else
-            {
-                builder.Append(subpath);
-            }
+            builder.Append(subpath);
 
             for (var i = _baseNamespace.Length; i < builder.Length; i++)
             {
@@ -103,12 +94,6 @@ namespace Microsoft.AspNet.FileProviders
             if (subpath == null)
             {
                 return new NotFoundDirectoryContents();
-            }
-
-            // Relative paths starting with a leading slash okay
-            if (subpath.StartsWith("/", StringComparison.Ordinal))
-            {
-                subpath = subpath.Substring(1);
             }
 
             // Non-hierarchal.

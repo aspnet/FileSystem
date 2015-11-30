@@ -28,17 +28,15 @@ namespace Microsoft.AspNet.FileProviders.Embedded.Tests
             Assert.False(fileInfo.Exists);
         }
 
-        [Theory]
-        [InlineData("File.txt")]
-        [InlineData("/File.txt")]
-        public void GetFileInfo_ReturnsFilesAtRoot(string filePath)
+        [Fact]
+        public void GetFileInfo_ReturnsFilesAtRoot()
         {
             // Arrange
             var provider = new EmbeddedFileProvider(GetType().GetTypeInfo().Assembly, Namespace);
             var expectedFileLength = new FileInfo("File.txt").Length;
 
             // Act
-            var fileInfo = provider.GetFileInfo(filePath);
+            var fileInfo = provider.GetFileInfo("File.txt");
 
             // Assert
             Assert.NotNull(fileInfo);
@@ -70,10 +68,23 @@ namespace Microsoft.AspNet.FileProviders.Embedded.Tests
         {
             // Arrange
             var provider = new EmbeddedFileProvider(GetType().GetTypeInfo().Assembly, Namespace);
-            var expectedFileLength = new FileInfo("File.txt").Length;
 
             // Act
             var fileInfo = provider.GetFileInfo("\\File.txt");
+
+            // Assert
+            Assert.NotNull(fileInfo);
+            Assert.False(fileInfo.Exists);
+        }
+
+        [Fact]
+        public void GetFileInfo_ReturnsNotFoundIfPathStartsWithSlash()
+        {
+            // Arrange
+            var provider = new EmbeddedFileProvider(GetType().GetTypeInfo().Assembly, Namespace);
+
+            // Act
+            var fileInfo = provider.GetFileInfo("/File.txt");
 
             // Assert
             Assert.NotNull(fileInfo);
@@ -158,7 +169,6 @@ namespace Microsoft.AspNet.FileProviders.Embedded.Tests
 
         [Theory]
         [InlineData("")]
-        [InlineData("/")]
         public void GetDirectoryContents_ReturnsAllFilesInFileSystem(string path)
         {
             // Arrange
