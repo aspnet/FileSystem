@@ -6,12 +6,22 @@ using System.Collections.Generic;
 
 namespace Microsoft.AspNet.FileProviders
 {
-    internal class CompositeDisposable : IDisposable
+    /// <summary>
+    /// Represents a composition of <see cref="IDisposable"/>.
+    /// </summary>
+    public class CompositeDisposable : IDisposable
     {
-        private readonly List<IDisposable> _disposables;
-
-        public CompositeDisposable(List<IDisposable> disposables)
+        private readonly IList<IDisposable> _disposables;
+        /// <summary>
+        /// Creates a new instance of <see cref="CompositeDisposable"/>.
+        /// </summary>
+        /// <param name="disposables">The list of <see cref="IDisposable"/> to compose.</param>
+        public CompositeDisposable(IList<IDisposable> disposables)
         {
+            if(disposables == null)
+            {
+                throw new ArgumentNullException(nameof(disposables));
+            }
             _disposables = disposables;
         }
 

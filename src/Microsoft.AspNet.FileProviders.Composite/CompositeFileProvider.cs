@@ -3,6 +3,8 @@
 
 using System.Collections.Generic;
 using Microsoft.Extensions.Primitives;
+using System;
+using System.Linq;
 
 namespace Microsoft.AspNet.FileProviders
 {
@@ -20,6 +22,18 @@ namespace Microsoft.AspNet.FileProviders
         public CompositeFileProvider(params IFileProvider[] fileProviders)
         {
             _fileProviders = fileProviders ?? new IFileProvider[0];
+        }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CompositeFileProvider" /> class using a list of file provider.
+        /// </summary>
+        /// <param name="fileProviders"></param>
+        public CompositeFileProvider(IEnumerable<IFileProvider> fileProviders)
+        {
+            if(fileProviders == null)
+            {
+                throw new ArgumentNullException(nameof(fileProviders));
+            }
+            _fileProviders = fileProviders.ToArray();
         }
 
         /// <summary>

@@ -8,12 +8,23 @@ using Microsoft.Extensions.Primitives;
 
 namespace Microsoft.AspNet.FileProviders
 {
-    internal class CompositeFileChangeToken : IChangeToken
+    /// <summary>
+    /// Represents a composition of <see cref="IChangeToken"/>.
+    /// </summary>
+    public class CompositeFileChangeToken : IChangeToken
     {
-        private readonly List<IChangeToken> _changeTokens;
+        private readonly IList<IChangeToken> _changeTokens;
 
-        public CompositeFileChangeToken(List<IChangeToken> changeTokens)
+        /// <summary>
+        /// Creates a new instance of <see cref="CompositeFileChangeToken"/>.
+        /// </summary>
+        /// <param name="changeTokens">The list of <see cref="IChangeToken"/> to compose.</param>
+        public CompositeFileChangeToken(IList<IChangeToken> changeTokens)
         {
+            if(changeTokens == null)
+            {
+                throw new ArgumentNullException(nameof(changeTokens));
+            }
             _changeTokens = changeTokens;
         }
 
