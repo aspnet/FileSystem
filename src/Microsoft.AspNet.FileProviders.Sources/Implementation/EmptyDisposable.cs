@@ -11,7 +11,6 @@ namespace Microsoft.AspNet.FileProviders
 
         private EmptyDisposable()
         {
-
         }
 
         public void Dispose()
