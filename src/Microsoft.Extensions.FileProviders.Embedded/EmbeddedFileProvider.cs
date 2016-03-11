@@ -23,6 +23,7 @@ namespace Microsoft.Extensions.FileProviders
         private readonly Assembly _assembly;
         private readonly string _baseNamespace;
         private readonly DateTimeOffset _lastModified;
+        private readonly string _root;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EmbeddedFileProvider" /> class using the specified
@@ -36,21 +37,54 @@ namespace Microsoft.Extensions.FileProviders
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EmbeddedFileProvider" /> class using the specified
-        /// assembly and base namespace.
+        /// assembly, base namespace and empty root.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="baseNamespace"></param>
+        public EmbeddedFileProvider(Assembly assembly, string baseNamespace)
+            : this(assembly, baseNamespace, string.Empty)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EmbeddedFileProvider" /> class using the specified
+        /// assembly, base namespace, and root.
         /// </summary>
         /// <param name="assembly">The assembly that contains the embedded resources.</param>
         /// <param name="baseNamespace">The base namespace that contains the embedded resources.</param>
-        public EmbeddedFileProvider(Assembly assembly, string baseNamespace)
+        /// <param name="root">The path that will be prepended to all requests.</param>
+        public EmbeddedFileProvider(Assembly assembly, string baseNamespace, string root)
         {
             if (assembly == null)
             {
                 throw new ArgumentNullException("assembly");
             }
 
+            if (!string.IsNullOrEmpty(root) && root.IndexOfAny(Path.GetInvalidPathChars()) != -1)
+            {
+                throw new FormatException(nameof(root));
+            }
+
             _baseNamespace = string.IsNullOrEmpty(baseNamespace) ? string.Empty : baseNamespace + ".";
             _assembly = assembly;
+            _root = string.IsNullOrEmpty(root) ? string.Empty : NormalizeRoot(root);
+
             // REVIEW: Does this even make sense?
             _lastModified = DateTimeOffset.MaxValue;
+        }
+
+        private string GetCombinedPath(string subpath)
+        {
+            var normalizedSubpath = subpath;
+
+            if (!string.IsNullOrEmpty(_root))
+            {
+                normalizedSubpath = subpath.StartsWith("/")
+                    ? subpath.Substring(1)
+                    : subpath;
+            }
+
+            return Path.Combine(_root, normalizedSubpath);
         }
 
         /// <summary>
@@ -64,6 +98,8 @@ namespace Microsoft.Extensions.FileProviders
             {
                 return new NotFoundFileInfo(subpath);
             }
+
+            subpath = GetCombinedPath(subpath);
 
             var builder = new StringBuilder(_baseNamespace.Length + subpath.Length);
             builder.Append(_baseNamespace);
@@ -115,6 +151,8 @@ namespace Microsoft.Extensions.FileProviders
                 return new NotFoundDirectoryContents();
             }
 
+            subpath = GetCombinedPath(subpath);
+
             // Relative paths starting with a leading slash okay
             if (subpath.StartsWith("/", StringComparison.Ordinal))
             {
@@ -145,6 +183,23 @@ namespace Microsoft.Extensions.FileProviders
             }
 
             return new EnumerableDirectoryContents(entries);
+        }
+
+        private string NormalizeRoot(string root)
+        {
+            string normalizedRoot = root;
+
+            if (!root.StartsWith("/") && !root.StartsWith("\\"))
+            {
+                normalizedRoot = $"/{normalizedRoot}";
+            }
+
+            if (!root.EndsWith("/") && !root.EndsWith("\\"))
+            {
+                normalizedRoot = $"{normalizedRoot}/";
+            }
+
+            return normalizedRoot;
         }
 
         public IChangeToken Watch(string pattern)
