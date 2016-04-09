@@ -7,8 +7,10 @@ namespace Microsoft.Extensions.FileProviders.Physical.Watcher
 {
     public interface IFileSystemWatcher : IDisposable
     {
-        event Action<string> OnFileChange;
+        event EventHandler<string> OnFileChange;
 
-        bool EnableRisingEvents { get; set; }
+        event EventHandler OnError;
+
+        bool EnableRaisingEvents { get; set; }
     }
 }

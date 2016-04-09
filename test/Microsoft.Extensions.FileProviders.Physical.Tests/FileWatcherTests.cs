@@ -15,265 +15,272 @@ namespace Microsoft.Extensions.FileProviders.Physical.Tests
     {
         private const int DefaultTimeout = 10 * 1000; // 10 sec
 
-        //[Theory]
-        //[InlineData(true)]
-        //[InlineData(false)]
-        //public void NewFile(bool usePolling)
-        //{
-        //    UsingTempDirectory(dir =>
-        //    {
-        //        using (var changedEv = new ManualResetEvent(false))
-        //        using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
-        //        {
-        //            var filesChanged = new HashSet<string>();
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void NewFile(bool usePolling)
+        {
+            UsingTempDirectory(dir =>
+            {
+                using (var changedEv = new ManualResetEvent(false))
+                using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
+                {
+                    var filesChanged = new HashSet<string>();
 
-        //            watcher.OnFileChange += (f) =>
-        //            {
-        //                filesChanged.Add(f);
-        //                changedEv.Set();
-        //            };
-        //            watcher.EnableRisingEvents = true;
+                    watcher.OnFileChange += (_, f) =>
+                    {
+                        filesChanged.Add(f);
+                        changedEv.Set();
+                    };
+                    watcher.EnableRaisingEvents = true;
 
-        //            var testFileFullPath = Path.Combine(dir, "foo");
-        //            File.WriteAllText(testFileFullPath, string.Empty);
+                    var testFileFullPath = Path.Combine(dir, "foo");
+                    File.WriteAllText(testFileFullPath, string.Empty);
 
-        //            Assert.True(changedEv.WaitOne(DefaultTimeout));
-        //            Assert.Equal(testFileFullPath, filesChanged.Single());
-        //        }
-        //    });
-        //}
-
-        //[Theory]
-        //[InlineData(true)]
-        //[InlineData(false)]
-        //public void ChangeFile(bool usePolling)
-        //{
-        //    UsingTempDirectory(dir =>
-        //    {
-        //        var testFileFullPath = Path.Combine(dir, "foo");
-        //        File.WriteAllText(testFileFullPath, string.Empty);
-
-        //        using (var changedEv = new ManualResetEvent(false))
-        //        using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
-        //        {
-        //            var filesChanged = new HashSet<string>();
-
-        //            watcher.OnFileChange += (f) =>
-        //            {
-        //                filesChanged.Add(f);
-        //                changedEv.Set();
-        //            };
-        //            watcher.EnableRisingEvents = true;
-
-        //            File.WriteAllText(testFileFullPath, string.Empty);
-
-        //            Assert.True(changedEv.WaitOne(DefaultTimeout));
-        //            Assert.Equal(testFileFullPath, filesChanged.Single());
-        //        }
-        //    });
-        //}
-
-        //[Theory]
-        //[InlineData(true)]
-        //[InlineData(false)]
-        //public void MoveFile(bool usePolling)
-        //{
-        //    UsingTempDirectory(dir =>
-        //    {
-        //        var srcFile = Path.Combine(dir, "foo");
-        //        var dstFile = Path.Combine(dir, "foo2");
-
-        //        File.WriteAllText(srcFile, string.Empty);
-
-        //        using (var changedEv = new ManualResetEvent(false))
-        //        using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
-        //        {
-        //            var filesChanged = new HashSet<string>();
-
-        //            var changeCount = 0;
-        //            watcher.OnFileChange += (f) =>
-        //            {
-        //                filesChanged.Add(f);
-
-        //                changeCount++;
-
-        //                if (changeCount >= 2)
-        //                {
-        //                    changedEv.Set();
-        //                }
-        //            };
-        //            watcher.EnableRisingEvents = true;
-
-        //            File.Move(srcFile, dstFile);
-
-        //            Assert.True(changedEv.WaitOne(DefaultTimeout));
-        //            Assert.True(filesChanged.Contains(srcFile));
-        //            Assert.True(filesChanged.Contains(dstFile));
-        //        }
-        //    });
-        //}
-
-        //[Theory]
-        //[InlineData(true)]
-        //[InlineData(false)]
-        //public void FileInSubdirectory(bool usePolling)
-        //{
-        //    UsingTempDirectory(dir =>
-        //    {
-        //        var subdir = Path.Combine(dir, "subdir");
-        //        Directory.CreateDirectory(subdir);
-
-        //        var testFileFullPath = Path.Combine(subdir, "foo");
-        //        File.WriteAllText(testFileFullPath, string.Empty);
-
-        //        using (var changedEv = new ManualResetEvent(false))
-        //        using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
-        //        {
-        //            var filesChanged = new HashSet<string>();
-
-        //            watcher.OnFileChange += (f) =>
-        //            {
-        //                filesChanged.Add(f);
-        //                changedEv.Set();
-        //            };
-        //            watcher.EnableRisingEvents = true;
-
-        //            File.WriteAllText(testFileFullPath, string.Empty);
-
-        //            Assert.True(changedEv.WaitOne(DefaultTimeout));
-        //            Assert.Equal(testFileFullPath, filesChanged.Single());
-        //        }
-        //    });
-        //}
-
-        //[Theory]
-        //[InlineData(true)]
-        //[InlineData(false)]
-        //public void NoNotificationIfDisabled(bool usePolling)
-        //{
-        //    UsingTempDirectory(dir =>
-        //    {
-        //        using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
-        //        using (var changedEv = new ManualResetEvent(false))
-        //        {
-        //            watcher.OnFileChange += (f) => changedEv.Set();
-
-        //            // Disable
-        //            watcher.EnableRisingEvents = false;
-
-        //            var testFileFullPath = Path.Combine(dir, "foo");
-        //            File.WriteAllText(testFileFullPath, string.Empty);
-
-        //            Assert.False(changedEv.WaitOne(DefaultTimeout / 2));
-        //        }
-        //    });
-        //}
-
-        //[Theory]
-        //[InlineData(true)]
-        //[InlineData(false)]
-        //public void DisposedNoEvents(bool usePolling)
-        //{
-        //    UsingTempDirectory(dir =>
-        //    {
-        //        using (var changedEv = new ManualResetEvent(false))
-        //        {
-        //            using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
-        //            {
-        //                watcher.OnFileChange += (f) => changedEv.Set();
-        //                watcher.EnableRisingEvents = true;
-        //            }
-
-        //            var testFileFullPath = Path.Combine(dir, "foo");
-        //            File.WriteAllText(testFileFullPath, string.Empty);
-
-        //            Assert.False(changedEv.WaitOne(DefaultTimeout / 2));
-        //        }
-        //    });
-        //}
-
-        //[Theory]
-        //[InlineData(true)]
-        //[InlineData(false)]
-        //public void MultipleFiles(bool usePolling)
-        //{
-        //    UsingTempDirectory(dir =>
-        //    {
-        //        File.WriteAllText(Path.Combine(dir, "foo1"), string.Empty);
-        //        File.WriteAllText(Path.Combine(dir, "foo2"), string.Empty);
-        //        File.WriteAllText(Path.Combine(dir, "foo3"), string.Empty);
-        //        File.WriteAllText(Path.Combine(dir, "foo4"), string.Empty);
-        //        File.WriteAllText(Path.Combine(dir, "foo4"), string.Empty);
-
-        //        var testFileFullPath = Path.Combine(dir, "foo3");
-
-        //        using (var changedEv = new ManualResetEvent(false))
-        //        using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
-        //        {
-        //            var filesChanged = new HashSet<string>();
-
-        //            watcher.OnFileChange += (f) =>
-        //            {
-        //                filesChanged.Add(f);
-        //                changedEv.Set();
-        //            };
-        //            watcher.EnableRisingEvents = true;
-
-        //            File.WriteAllText(testFileFullPath, string.Empty);
-
-        //            Assert.True(changedEv.WaitOne(DefaultTimeout));
-        //            Assert.Equal(testFileFullPath, filesChanged.Single());
-        //        }
-        //    });
-        //}
-
-        //[Theory]
-        //[InlineData(true)]
-        //[InlineData(false)]
-        //public void MultipleTriggers(bool usePolling)
-        //{
-        //    UsingTempDirectory(dir =>
-        //    {
-        //        using (var changedEv = new AutoResetEvent(false))
-        //        using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
-        //        {
-        //            var filesChanged = new HashSet<string>();
-
-        //            watcher.OnFileChange += (f) =>
-        //            {
-        //                filesChanged.Add(f);
-        //                changedEv.Set();
-        //            };
-        //            watcher.EnableRisingEvents = true;
-
-        //            var testFileFullPath = Path.Combine(dir, "foo1");
-        //            File.WriteAllText(testFileFullPath, string.Empty);
-        //            Assert.True(changedEv.WaitOne(DefaultTimeout));
-        //            Assert.Equal(testFileFullPath, filesChanged.Single());
-        //            filesChanged.Clear();
-
-        //            testFileFullPath = Path.Combine(dir, "foo2");
-        //            File.WriteAllText(testFileFullPath, string.Empty);
-        //            Assert.True(changedEv.WaitOne(DefaultTimeout));
-        //            Assert.Equal(testFileFullPath, filesChanged.Single());
-        //            filesChanged.Clear();
-
-        //            testFileFullPath = Path.Combine(dir, "foo3");
-        //            File.WriteAllText(testFileFullPath, string.Empty);
-        //            Assert.True(changedEv.WaitOne(DefaultTimeout));
-        //            Assert.Equal(testFileFullPath, filesChanged.Single());
-        //            filesChanged.Clear();
-
-        //            File.WriteAllText(testFileFullPath, string.Empty);
-        //            Assert.True(changedEv.WaitOne(DefaultTimeout));
-        //            Assert.Equal(testFileFullPath, filesChanged.Single());
-        //        }
-        //    });
-        //}
+                    Assert.True(changedEv.WaitOne(DefaultTimeout));
+                    Assert.Equal(testFileFullPath, filesChanged.Single());
+                }
+            });
+        }
 
         [Theory]
         [InlineData(true)]
-        //[InlineData(false)]
+        [InlineData(false)]
+        public void ChangeFile(bool usePolling)
+        {
+            UsingTempDirectory(dir =>
+            {
+                var testFileFullPath = Path.Combine(dir, "foo");
+                File.WriteAllText(testFileFullPath, string.Empty);
+
+                using (var changedEv = new ManualResetEvent(false))
+                using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
+                {
+                    var filesChanged = new HashSet<string>();
+
+                    watcher.OnFileChange += (_, f) =>
+                    {
+                        filesChanged.Add(f);
+                        changedEv.Set();
+                    };
+                    watcher.EnableRaisingEvents = true;
+
+                    File.WriteAllText(testFileFullPath, string.Empty);
+
+                    Assert.True(changedEv.WaitOne(DefaultTimeout));
+                    Assert.Equal(testFileFullPath, filesChanged.Single());
+                }
+            });
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void MoveFile(bool usePolling)
+        {
+            UsingTempDirectory(dir =>
+            {
+                var srcFile = Path.Combine(dir, "foo");
+                var dstFile = Path.Combine(dir, "foo2");
+
+                File.WriteAllText(srcFile, string.Empty);
+
+                using (var changedEv = new ManualResetEvent(false))
+                using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
+                {
+                    var filesChanged = new HashSet<string>();
+
+                    var changeCount = 0;
+                    watcher.OnFileChange += (_, f) =>
+                    {
+                        filesChanged.Add(f);
+
+                        changeCount++;
+
+                        if (changeCount >= 2)
+                        {
+                            changedEv.Set();
+                        }
+                    };
+                    watcher.EnableRaisingEvents = true;
+
+                    File.Move(srcFile, dstFile);
+
+                    Assert.True(changedEv.WaitOne(DefaultTimeout));
+                    Assert.True(filesChanged.Contains(srcFile));
+                    Assert.True(filesChanged.Contains(dstFile));
+                }
+            });
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void FileInSubdirectory(bool usePolling)
+        {
+            UsingTempDirectory(dir =>
+            {
+                var subdir = Path.Combine(dir, "subdir");
+                Directory.CreateDirectory(subdir);
+
+                var testFileFullPath = Path.Combine(subdir, "foo");
+                File.WriteAllText(testFileFullPath, string.Empty);
+
+                using (var changedEv = new ManualResetEvent(false))
+                using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
+                {
+                    var filesChanged = new HashSet<string>();
+
+                    var totalChanges = 0;
+                    watcher.OnFileChange += (_, f) =>
+                    {
+                        filesChanged.Add(f);
+
+                        totalChanges++;
+                        if (totalChanges >= 2)
+                        {
+                            changedEv.Set();
+                        }
+                    };
+                    watcher.EnableRaisingEvents = true;
+
+                    File.WriteAllText(testFileFullPath, string.Empty);
+
+                    Assert.True(changedEv.WaitOne(DefaultTimeout));
+                    Assert.True(filesChanged.Contains(subdir));
+                    Assert.True(filesChanged.Contains(testFileFullPath));
+                }
+            });
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void NoNotificationIfDisabled(bool usePolling)
+        {
+            UsingTempDirectory(dir =>
+            {
+                using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
+                using (var changedEv = new ManualResetEvent(false))
+                {
+                    watcher.OnFileChange += (_, f) => changedEv.Set();
+
+                    // Disable
+                    watcher.EnableRaisingEvents = false;
+
+                    var testFileFullPath = Path.Combine(dir, "foo");
+                    File.WriteAllText(testFileFullPath, string.Empty);
+
+                    Assert.False(changedEv.WaitOne(DefaultTimeout / 2));
+                }
+            });
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void DisposedNoEvents(bool usePolling)
+        {
+            UsingTempDirectory(dir =>
+            {
+                using (var changedEv = new ManualResetEvent(false))
+                {
+                    using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
+                    {
+                        watcher.OnFileChange += (_, f) => changedEv.Set();
+                        watcher.EnableRaisingEvents = true;
+                    }
+
+                    var testFileFullPath = Path.Combine(dir, "foo");
+                    File.WriteAllText(testFileFullPath, string.Empty);
+
+                    Assert.False(changedEv.WaitOne(DefaultTimeout / 2));
+                }
+            });
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void MultipleFiles(bool usePolling)
+        {
+            UsingTempDirectory(dir =>
+            {
+                File.WriteAllText(Path.Combine(dir, "foo1"), string.Empty);
+                File.WriteAllText(Path.Combine(dir, "foo2"), string.Empty);
+                File.WriteAllText(Path.Combine(dir, "foo3"), string.Empty);
+                File.WriteAllText(Path.Combine(dir, "foo4"), string.Empty);
+                File.WriteAllText(Path.Combine(dir, "foo4"), string.Empty);
+
+                var testFileFullPath = Path.Combine(dir, "foo3");
+
+                using (var changedEv = new ManualResetEvent(false))
+                using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
+                {
+                    var filesChanged = new HashSet<string>();
+
+                    watcher.OnFileChange += (_, f) =>
+                    {
+                        filesChanged.Add(f);
+                        changedEv.Set();
+                    };
+                    watcher.EnableRaisingEvents = true;
+
+                    File.WriteAllText(testFileFullPath, string.Empty);
+
+                    Assert.True(changedEv.WaitOne(DefaultTimeout));
+                    Assert.Equal(testFileFullPath, filesChanged.Single());
+                }
+            });
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void MultipleTriggers(bool usePolling)
+        {
+            UsingTempDirectory(dir =>
+            {
+                using (var changedEv = new AutoResetEvent(false))
+                using (var watcher = FileWatcherFactory.CreateWatcher(dir, usePolling))
+                {
+                    var filesChanged = new HashSet<string>();
+
+                    watcher.OnFileChange += (_, f) =>
+                    {
+                        filesChanged.Add(f);
+                        changedEv.Set();
+                    };
+                    watcher.EnableRaisingEvents = true;
+
+                    var testFileFullPath = Path.Combine(dir, "foo1");
+                    File.WriteAllText(testFileFullPath, string.Empty);
+                    Assert.True(changedEv.WaitOne(DefaultTimeout));
+                    Assert.Equal(testFileFullPath, filesChanged.Single());
+                    filesChanged.Clear();
+
+                    testFileFullPath = Path.Combine(dir, "foo2");
+                    File.WriteAllText(testFileFullPath, string.Empty);
+                    Assert.True(changedEv.WaitOne(DefaultTimeout));
+                    Assert.Equal(testFileFullPath, filesChanged.Single());
+                    filesChanged.Clear();
+
+                    testFileFullPath = Path.Combine(dir, "foo3");
+                    File.WriteAllText(testFileFullPath, string.Empty);
+                    Assert.True(changedEv.WaitOne(DefaultTimeout));
+                    Assert.Equal(testFileFullPath, filesChanged.Single());
+                    filesChanged.Clear();
+
+                    File.WriteAllText(testFileFullPath, string.Empty);
+                    Assert.True(changedEv.WaitOne(DefaultTimeout));
+                    Assert.Equal(testFileFullPath, filesChanged.Single());
+                }
+            });
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
         public void DeleteSubfolder(bool usePolling)
         {
             UsingTempDirectory(dir =>
@@ -295,17 +302,17 @@ namespace Microsoft.Extensions.FileProviders.Physical.Tests
                     var filesChanged = new HashSet<string>();
 
                     var totalChanges = 0;
-                    watcher.OnFileChange += (f) =>
+                    watcher.OnFileChange += (_, f) =>
                     {
                         filesChanged.Add(f);
 
                         totalChanges++;
-                        if (totalChanges >= 3)
+                        if (totalChanges >= 4)
                         {
                             changedEv.Set();
                         }
                     };
-                    watcher.EnableRisingEvents = true;
+                    watcher.EnableRaisingEvents = true;
 
                     Directory.Delete(subdir, recursive: true);
 
@@ -314,6 +321,7 @@ namespace Microsoft.Extensions.FileProviders.Physical.Tests
                     Assert.True(filesChanged.Contains(f1));
                     Assert.True(filesChanged.Contains(f2));
                     Assert.True(filesChanged.Contains(f3));
+                    Assert.True(filesChanged.Contains(subdir));
                 }
             });
         }

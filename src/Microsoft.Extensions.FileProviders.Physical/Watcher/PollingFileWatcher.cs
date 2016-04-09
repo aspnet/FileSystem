@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,10 +14,11 @@ namespace Microsoft.Extensions.FileProviders.Physical.Watcher
         // The minimum interval to rerun the scan
         private static readonly TimeSpan _minRunInternal = TimeSpan.FromSeconds(.5);
 
-        private readonly string _watchedDirectory;
+        private readonly DirectoryInfo _watchedDirectory;
 
-        private Dictionary<string, FileMeta> _knownFiles = new Dictionary<string, FileMeta>();
+        private Dictionary<string, FileMeta> _knownEntities = new Dictionary<string, FileMeta>();
         private Dictionary<string, FileMeta> _tempDictionary = new Dictionary<string, FileMeta>();
+        private HashSet<string> _changes = new HashSet<string>();
 
         private Thread _pollingThread;
         private bool _raiseEvents;
@@ -28,7 +32,7 @@ namespace Microsoft.Extensions.FileProviders.Physical.Watcher
                 throw new ArgumentNullException(nameof(watchedDirectory));
             }
 
-            _watchedDirectory = watchedDirectory;
+            _watchedDirectory = new DirectoryInfo(watchedDirectory);
 
             _pollingThread = new Thread(new ThreadStart(PollingLoop));
             _pollingThread.IsBackground = true;
@@ -36,9 +40,13 @@ namespace Microsoft.Extensions.FileProviders.Physical.Watcher
             _pollingThread.Start();
         }
 
-        public event Action<string> OnFileChange;
+        public event EventHandler<string> OnFileChange;
 
-        public bool EnableRisingEvents
+#pragma warning disable CS0067 // not used
+        public event EventHandler OnError;
+#pragma warning restore
+
+        public bool EnableRaisingEvents
         {
             get
             {
@@ -92,71 +100,116 @@ namespace Microsoft.Extensions.FileProviders.Physical.Watcher
 
         private void CreateKnownFilesSnapshot()
         {
-            _knownFiles.Clear();
+            _knownEntities.Clear();
 
-            ForeachFileInDirectory(f =>
+            ForeachEntityInDirectory(_watchedDirectory, f =>
             {
-                _knownFiles.Add(f.FullName, new FileMeta(f.LastWriteTime));
+                _knownEntities.Add(f.FullName, new FileMeta(f));
             });
         }
 
         private void CheckForChangedFiles()
         {
-            ForeachFileInDirectory(f =>
+            _changes.Clear();
+
+            ForeachEntityInDirectory(_watchedDirectory, f =>
             {
                 var fullFilePath = f.FullName;
 
-                if (!_knownFiles.ContainsKey(fullFilePath))
+                if (!_knownEntities.ContainsKey(fullFilePath))
                 {
                     // New file
-                    NotifyChange(fullFilePath);
+                    RecordChange(f);
                 }
                 else
                 {
-                    var fileMeta = _knownFiles[fullFilePath];
-                    if (fileMeta.LastWriteTime != f.LastWriteTime)
+                    var fileMeta = _knownEntities[fullFilePath];
+                    if (fileMeta.FileInfo.LastWriteTime != f.LastWriteTime)
                     {
                         // File changed
-                        NotifyChange(fullFilePath);
+                        RecordChange(f);
                     }
 
-                    _knownFiles[fullFilePath] = new FileMeta(fileMeta.LastWriteTime, true);
+                    _knownEntities[fullFilePath] = new FileMeta(fileMeta.FileInfo, true);
                 }
 
-                _tempDictionary.Add(f.FullName, new FileMeta(f.LastWriteTime));
+                _tempDictionary.Add(f.FullName, new FileMeta(f));
             });
 
-            foreach (var file in _knownFiles)
+            foreach (var file in _knownEntities)
             {
                 if (!file.Value.FoundAgain)
                 {
                     // File deleted
-                    NotifyChange(file.Key);
+                    RecordChange(file.Value.FileInfo);
                 }
             }
 
+            NotifyChanges();
+
             // Swap the two dictionaries
-            var swap = _knownFiles;
-            _knownFiles = _tempDictionary;
+            var swap = _knownEntities;
+            _knownEntities = _tempDictionary;
             _tempDictionary = swap;
 
             _tempDictionary.Clear();
         }
 
-        private void ForeachFileInDirectory(Action<FileInfo> fileAction)
+        private void RecordChange(FileSystemInfo fileInfo)
         {
-            var watchedFiles = Directory.EnumerateFiles(_watchedDirectory, "*.*", SearchOption.AllDirectories);
-            foreach (var fullFilePath in watchedFiles)
+            if (_changes.Contains(fileInfo.FullName) ||
+                fileInfo.FullName.Equals(_watchedDirectory.FullName, StringComparison.Ordinal))
             {
-                fileAction(new FileInfo(fullFilePath));
+                return;
+            }
+
+            _changes.Add(fileInfo.FullName);
+            if (fileInfo.FullName != _watchedDirectory.FullName)
+            {
+                var file = fileInfo as FileInfo;
+                if (file != null)
+                {
+                    RecordChange(file.Directory);
+                }
+                else
+                {
+                    var dir = fileInfo as DirectoryInfo;
+                    if (dir != null)
+                    {
+                        RecordChange(dir.Parent);
+                    }
+                }
             }
         }
 
-        private void NotifyChange(string fullPath)
+        private void ForeachEntityInDirectory(DirectoryInfo dirInfo, Action<FileSystemInfo> fileAction)
         {
-            if (!_disposed && _raiseEvents)
+            var entities = dirInfo.EnumerateFileSystemInfos("*.*");
+            foreach (var entity in entities)
             {
-                OnFileChange(fullPath);
+                fileAction(entity);
+
+                var subdirInfo = entity as DirectoryInfo;
+                if (subdirInfo !=null)
+                {
+                    ForeachEntityInDirectory(subdirInfo, fileAction);
+                }
+            }
+        }
+
+        private void NotifyChanges()
+        {
+            foreach(var path in _changes)
+            {
+                if (_disposed || !_raiseEvents)
+                {
+                    break;
+                }
+
+                if (OnFileChange != null)
+                {
+                    OnFileChange(this, path);
+                }
             }
         }
 
@@ -170,19 +223,19 @@ namespace Microsoft.Extensions.FileProviders.Physical.Watcher
 
         public void Dispose()
         {
-            EnableRisingEvents = false;
+            EnableRaisingEvents = false;
             _disposed = true;
         }
 
         private struct FileMeta
         {
-            public FileMeta(DateTime lastWriteTime, bool foundAgain = false)
+            public FileMeta(FileSystemInfo fileInfo, bool foundAgain = false)
             {
-                LastWriteTime = lastWriteTime;
+                FileInfo = fileInfo;
                 FoundAgain = foundAgain;
             }
 
-            public DateTime LastWriteTime;
+            public FileSystemInfo FileInfo;
 
             public bool FoundAgain;
         }

@@ -1,14 +1,24 @@
-﻿using System;
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System;
 using System.IO;
 
 namespace Microsoft.Extensions.FileProviders.Physical.Watcher
 {
     internal class DotnetFileWatcher : IFileSystemWatcher
     {
+        private readonly Func<string, FileSystemWatcher> _watcherFactory;
         private readonly string _watchedDirectory;
+
         private FileSystemWatcher _fileSystemWatcher;
 
         public DotnetFileWatcher(string watchedDirectory)
+            : this(watchedDirectory, DefaultWatcherFactory)
+        {
+        }
+
+        internal DotnetFileWatcher(string watchedDirectory, Func<string, FileSystemWatcher> fileSystemWatcherFactory)
         {
             if (string.IsNullOrEmpty(watchedDirectory))
             {
@@ -16,32 +26,65 @@ namespace Microsoft.Extensions.FileProviders.Physical.Watcher
             }
 
             _watchedDirectory = watchedDirectory;
+            _watcherFactory = fileSystemWatcherFactory;
             CreateFileSystemWatcher();
+        }
+
+        public event EventHandler<string> OnFileChange;
+
+        public event EventHandler OnError;
+
+        private static FileSystemWatcher DefaultWatcherFactory(string watchedDirectory)
+        {
+            if (string.IsNullOrEmpty(watchedDirectory))
+            {
+                throw new ArgumentNullException(nameof(watchedDirectory));
+            }
+
+            return new FileSystemWatcher(watchedDirectory);
         }
 
         private void FSW_Error(object sender, ErrorEventArgs e)
         {
             // Recreate the watcher
             CreateFileSystemWatcher();
+
+            if (OnError != null)
+            {
+                OnError(this, null);
+            }
         }
 
         private void FSW_Renamed(object sender, RenamedEventArgs e)
         {
             NotifyChange(e.OldFullPath);
             NotifyChange(e.FullPath);
+
+            if (Directory.Exists(e.FullPath))
+            {
+                // If the renamed entity is a directory then notify tokens for every sub item.
+                foreach (var newLocation in Directory.EnumerateFileSystemEntries(e.FullPath, "*", SearchOption.AllDirectories))
+                {
+                    // Calculated previous path of this moved item.
+                    var oldLocation = Path.Combine(e.OldFullPath, newLocation.Substring(e.FullPath.Length + 1));
+                    NotifyChange(oldLocation);
+                    NotifyChange(newLocation);
+                }
+            }
         }
 
         private void FSW_Changed(object sender, FileSystemEventArgs e)
         {
+
             NotifyChange(e.FullPath);
         }
 
         private void NotifyChange(string fullPath)
         {
-            // Only report file changes
-            if (File.Exists(fullPath))
+            if (OnFileChange != null)
             {
-                OnFileChange(fullPath);
+                // Only report file changes
+                OnFileChange(this, fullPath);
             }
         }
 
@@ -64,7 +107,7 @@ namespace Microsoft.Extensions.FileProviders.Physical.Watcher
                 _fileSystemWatcher.Dispose();
             }
 
-            _fileSystemWatcher = new FileSystemWatcher(_watchedDirectory);
+            _fileSystemWatcher = _watcherFactory(_watchedDirectory);
             _fileSystemWatcher.IncludeSubdirectories = true;
 
             _fileSystemWatcher.Created += FSW_Changed;
@@ -76,13 +119,11 @@ namespace Microsoft.Extensions.FileProviders.Physical.Watcher
             _fileSystemWatcher.EnableRaisingEvents = enableEvents;
         }
 
-        public bool EnableRisingEvents
+        public bool EnableRaisingEvents
         {
             get { return _fileSystemWatcher.EnableRaisingEvents; }
             set { _fileSystemWatcher.EnableRaisingEvents = value; }
         }
-
-        public event Action<string> OnFileChange;
 
         public void Dispose()
         {
