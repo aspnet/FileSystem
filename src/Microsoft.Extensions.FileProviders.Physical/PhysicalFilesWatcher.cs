@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.FileProviders.Physical.Watcher;
 using Microsoft.Extensions.Primitives;
 
 namespace Microsoft.Extensions.FileProviders.Physical
@@ -14,25 +15,21 @@ namespace Microsoft.Extensions.FileProviders.Physical
     {
         private readonly ConcurrentDictionary<string, FileChangeToken> _tokenCache =
             new ConcurrentDictionary<string, FileChangeToken>(StringComparer.OrdinalIgnoreCase);
-        private readonly FileSystemWatcher _fileWatcher;
+        private readonly IFileSystemWatcher _fileWatcher;
         private readonly object _lockObject = new object();
         private readonly string _root;
 
         public PhysicalFilesWatcher(string root)
-            : this(root, new FileSystemWatcher(root))
+            : this(root, FileWatcherFactory.CreateWatcher(root))
         {
         }
 
-        public PhysicalFilesWatcher(string root, FileSystemWatcher fileSystemWatcher)
+        public PhysicalFilesWatcher(string root, IFileSystemWatcher watcher)
         {
             _root = root;
-            _fileWatcher = fileSystemWatcher;
-            _fileWatcher.IncludeSubdirectories = true;
-            _fileWatcher.Created += OnChanged;
-            _fileWatcher.Changed += OnChanged;
-            _fileWatcher.Renamed += OnRenamed;
-            _fileWatcher.Deleted += OnChanged;
-            _fileWatcher.Error += OnError;
+            _fileWatcher = watcher;
+            _fileWatcher.OnFileChange += OnChanged;
+            _fileWatcher.OnError += OnError;
         }
 
         internal IChangeToken CreateFileChangeToken(string filter)
@@ -62,31 +59,12 @@ namespace Microsoft.Extensions.FileProviders.Physical
             _fileWatcher.Dispose();
         }
 
-        private void OnRenamed(object sender, RenamedEventArgs e)
+        private void OnChanged(object sender, string fullPath)
         {
-            // For a file name change or a directory's name change notify registered tokens.
-            OnFileSystemEntryChange(e.OldFullPath);
-            OnFileSystemEntryChange(e.FullPath);
-
-            if (Directory.Exists(e.FullPath))
-            {
-                // If the renamed entity is a directory then notify tokens for every sub item.
-                foreach (var newLocation in Directory.EnumerateFileSystemEntries(e.FullPath, "*", SearchOption.AllDirectories))
-                {
-                    // Calculated previous path of this moved item.
-                    var oldLocation = Path.Combine(e.OldFullPath, newLocation.Substring(e.FullPath.Length + 1));
-                    OnFileSystemEntryChange(oldLocation);
-                    OnFileSystemEntryChange(newLocation);
-                }
-            }
+            OnFileSystemEntryChange(fullPath);
         }
 
-        private void OnChanged(object sender, FileSystemEventArgs e)
-        {
-            OnFileSystemEntryChange(e.FullPath);
-        }
-
-        private void OnError(object sender, ErrorEventArgs e)
+        private void OnError(object sender, EventArgs args)
         {
             // Notify all cache entries on error.
             foreach (var token in _tokenCache.Values)
