@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-*",
+  "version": "1.0.0-rc2-final",
   "buildOptions": {
     "warningsAsErrors": true,
     "keyFile": "../../tools/Key.snk",
@@ -24,12 +24,12 @@
       "version": "1.0.0-*",
       "type": "build"
     },
-    "Microsoft.Extensions.FileProviders.Abstractions": "1.0.0-*"
+    "Microsoft.Extensions.FileProviders.Abstractions": "1.0.0-rc2-final"
   },
   "frameworks": {
     "netstandard1.0": {
       "dependencies": {
-        "System.Runtime.Extensions": "4.1.0-*"
+        "System.Runtime.Extensions": "4.1.0-rc2-24027"
       }
     }
   }
