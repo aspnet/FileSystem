@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-*",
+  "version": "1.0.0",
   "buildOptions": {
     "warningsAsErrors": true,
     "keyFile": "../../tools/Key.snk",
@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "Microsoft.Extensions.HashCodeCombiner.Sources": {
-      "version": "1.0.0-*",
+      "version": "1.0.0-rtm-21431",
       "type": "build"
     }
   },
@@ -33,11 +33,11 @@
     },
     "netstandard1.3": {
       "dependencies": {
-        "System.Collections": "4.0.11-*",
-        "System.IO.FileSystem": "4.0.1-*",
-        "System.Linq": "4.1.0-*",
-        "System.Resources.ResourceManager": "4.0.1-*",
-        "System.Runtime.Extensions": "4.1.0-*"
+        "System.Collections": "4.0.11",
+        "System.IO.FileSystem": "4.0.1",
+        "System.Linq": "4.1.0",
+        "System.Resources.ResourceManager": "4.0.1",
+        "System.Runtime.Extensions": "4.1.0"
       }
     }
   }

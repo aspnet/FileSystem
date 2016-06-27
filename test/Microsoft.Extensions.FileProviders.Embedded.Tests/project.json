@@ -1,8 +1,8 @@
 {
   "dependencies": {
-    "dotnet-test-xunit": "1.0.0-*",
-    "Microsoft.AspNetCore.Testing": "1.0.0-*",
-    "Microsoft.Extensions.FileProviders.Embedded": "1.0.0-*",
+    "dotnet-test-xunit": "1.0.0-rc3-000000-00",
+    "Microsoft.AspNetCore.Testing": "1.0.0-rtm-21431",
+    "Microsoft.Extensions.FileProviders.Embedded": "1.0.0",
     "xunit": "2.1.0"
   },
   "testRunner": "xunit",
@@ -19,11 +19,11 @@
       ],
       "dependencies": {
         "Microsoft.NETCore.App": {
-          "version": "1.0.0-*",
+          "version": "1.0.0",
           "type": "platform"
         },
-        "System.Reflection.Extensions": "4.0.1-*",
-        "System.Diagnostics.Process": "4.1.0-*"
+        "System.Reflection.Extensions": "4.0.1",
+        "System.Diagnostics.Process": "4.1.0"
       }
     },
     "net451": {

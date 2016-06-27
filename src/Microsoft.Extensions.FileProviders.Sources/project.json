@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-*",
+  "version": "1.0.0-rtm-21431",
   "description": "File provider shared source code for Microsoft.Extensions.FileProviders.",
   "packOptions": {
     "repository": {
@@ -15,7 +15,7 @@
   "frameworks": {
     "netstandard1.0": {
       "dependencies": {
-        "System.Linq": "4.1.0-*"
+        "System.Linq": "4.1.0"
       }
     }
   }
