@@ -30,12 +30,13 @@ namespace Microsoft.Extensions.FileProviders.Physical
         public Stream CreateReadStream()
         {
             // Note: Buffer size must be greater than zero, even if the file size is zero.
+            var bufferSize = (int)Math.Min(1024 * 64, Math.Max(1, Length));
             return new FileStream(
                 PhysicalPath,
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.ReadWrite,
-                Math.Min((int)Length, 1024 * 64),
+                bufferSize,
                 FileOptions.Asynchronous | FileOptions.SequentialScan);
         }
     }

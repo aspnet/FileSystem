@@ -114,6 +114,23 @@ namespace Microsoft.Extensions.FileProviders
             }
         }
 
+        [Fact]
+        public void CreateReadStreamSuccedsOnEmptyFile()
+        {
+            using (var root = new DisposableFileSystem())
+            {
+                using (var provider = new PhysicalFileProvider(root.RootPath))
+                {
+                    var fileName = Guid.NewGuid().ToString();
+                    var filePath = Path.Combine(root.RootPath, fileName);
+                    using (File.Create(filePath)) { }
+                    var info = provider.GetFileInfo(fileName);
+                    var stream = info.CreateReadStream();
+                    Assert.NotNull(stream);
+                }
+            }
+        }
+
         [ConditionalFact]
         [OSSkipCondition(OperatingSystems.Linux, SkipReason = "Hidden and system files only make sense on Windows.")]
         [OSSkipCondition(OperatingSystems.MacOSX, SkipReason = "Hidden and system files only make sense on Windows.")]
