@@ -35,7 +35,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.ReadWrite,
-                1024 * 64,
+                Math.Min((int)Length, 1024 * 64),
                 FileOptions.Asynchronous | FileOptions.SequentialScan);
         }
     }
