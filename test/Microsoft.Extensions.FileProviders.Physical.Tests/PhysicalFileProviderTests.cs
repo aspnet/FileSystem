@@ -123,10 +123,12 @@ namespace Microsoft.Extensions.FileProviders
                 {
                     var fileName = Guid.NewGuid().ToString();
                     var filePath = Path.Combine(root.RootPath, fileName);
-                    using (File.Create(filePath)) { }
+                    File.WriteAllBytes(filePath, new byte[0]);
                     var info = provider.GetFileInfo(fileName);
-                    var stream = info.CreateReadStream();
-                    Assert.NotNull(stream);
+                    using (var stream = info.CreateReadStream())
+                    {
+                        Assert.NotNull(stream);
+                    }
                 }
             }
         }
