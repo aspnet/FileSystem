@@ -14,6 +14,42 @@ namespace Microsoft.Extensions.FileProviders.Embedded.Tests
     {
         private static readonly string Namespace = typeof(EmbeddedFileProviderTests).Namespace;
 
+        private static Func<string, bool, SplitResourcePath> _simpleSplitter = (resourcePath, isDirectory) =>
+        {
+            var i1 = resourcePath.LastIndexOf('.');
+            if (i1 <= 0)
+            {
+                return new SplitResourcePath()
+                {
+                    Name = resourcePath
+                };
+            }
+
+            if (isDirectory)
+            {
+                return new SplitResourcePath()
+                {
+                    Name = resourcePath.Substring(i1 + 1),
+                    ParentDirectory = resourcePath.Substring(0, i1)
+                };
+            }
+
+            var i2 = resourcePath.LastIndexOf('.', i1 - 1);
+            if (i2 <= 0)
+            {
+                return new SplitResourcePath()
+                {
+                    Name = resourcePath
+                };
+            }
+
+            return new SplitResourcePath()
+            {
+                Name = resourcePath.Substring(i2 + 1),
+                ParentDirectory = resourcePath.Substring(0, i2)
+            };
+        };
+
         [Fact]
         public void ConstructorWithNullAssemblyThrowsArgumentException()
         {
@@ -227,6 +263,118 @@ namespace Microsoft.Extensions.FileProviders.Embedded.Tests
             Assert.NotNull(token);
             Assert.False(token.ActiveChangeCallbacks);
             Assert.False(token.HasChanged);
+        }
+
+        [Theory]
+        [InlineData("/", "", true)]
+        [InlineData("/File.txt", "File.txt", false)]
+        [InlineData("/Resources", "Resources", true)]
+        [InlineData("/Resources/ResourcesInSubdirectory", "ResourcesInSubdirectory", true)]
+        [InlineData("/Resources/ResourcesInSubdirectory/File3.txt", "File3.txt", false)]
+        public void GetFileInfo_Splitter_ReturnsFileInfo(string subpath, string expectedName, bool expectedIsDirectory)
+        {
+            // Arrange
+            var provider = new EmbeddedFileProvider(GetType().GetTypeInfo().Assembly, _simpleSplitter);
+
+            // Act
+            var fileInfo = provider.GetFileInfo(subpath);
+
+            // Assert
+            Assert.True(fileInfo.Exists);
+            Assert.Equal(expectedName, fileInfo.Name);
+            Assert.Equal(expectedIsDirectory, fileInfo.IsDirectory);
+            if (!expectedIsDirectory)
+            {
+                var stream = fileInfo.CreateReadStream();
+                Assert.NotNull(stream);
+                stream.Dispose();
+            }
+        }
+
+        [Theory]
+        [InlineData("/Unknown.txt")]
+        [InlineData("/Resources/Unknown.txt")]
+        public void GetFileInfo_Splitter_ReturnsNotFoundFileInfo_IfFileDoesNotExist(string subpath)
+        {
+            // Arrange
+            var provider = new EmbeddedFileProvider(GetType().GetTypeInfo().Assembly, _simpleSplitter);
+
+            // Act
+            var fileInfo = provider.GetFileInfo(subpath);
+
+            // Assert
+            Assert.False(fileInfo.Exists);
+        }
+
+        [Fact]
+        public void GetDirectoryContents_Splitter_ReturnFileInfosAtRoot()
+        {
+            // Arrange
+            var provider = new EmbeddedFileProvider(GetType().GetTypeInfo().Assembly, _simpleSplitter);
+
+            // Act
+            var entries = provider.GetDirectoryContents("/");
+
+            // Assert
+            var sorted = entries.OrderBy(f => f.Name, StringComparer.Ordinal);
+            Assert.Equal(3, sorted.Count());
+            Assert.Equal(new string[] { "File.txt", "Resources", "sub" }, sorted.Select(f => f.Name));
+            Assert.Equal(new bool[] { false, true, true }, sorted.Select(f => f.IsDirectory));
+        }
+
+        [Fact]
+        public void GetDirectoryContents_Splitter_ReturnFileInfosUnderSubdirectory()
+        {
+            // Arrange
+            var provider = new EmbeddedFileProvider(GetType().GetTypeInfo().Assembly, _simpleSplitter);
+
+            // Act
+            var entries = provider.GetDirectoryContents("/Resources/ResourcesInSubdirectory");
+
+            // Assert
+            Assert.Equal(1, entries.Count());
+            Assert.Equal(new string[] { "File3.txt" }, entries.Select(f => f.Name));
+            Assert.Equal(new bool[] { false }, entries.Select(f => f.IsDirectory));
+        }
+
+        [Fact]
+        public void GetDirectoryContents_Splitter_ReturnsNotFoundFileInfo_IfFileDoesNotExist()
+        {
+            // Arrange
+            var provider = new EmbeddedFileProvider(GetType().GetTypeInfo().Assembly, _simpleSplitter);
+
+            // Act
+            var entries = provider.GetDirectoryContents("/Unknown");
+
+            // Assert
+            Assert.False(entries.Exists);
+        }
+
+        [Fact]
+        public void GetDirectoryContents_Splitter_ReturnsNotFoundFileInfo_IfFileInsteadOfDirectory()
+        {
+            // Arrange
+            var provider = new EmbeddedFileProvider(GetType().GetTypeInfo().Assembly, _simpleSplitter);
+
+            // Act
+            var entries = provider.GetDirectoryContents("/File.txt");
+
+            // Assert
+            Assert.False(entries.Exists);
+        }
+
+        [Fact]
+        public void Splitter_ReturnsEmptyName()
+        {
+            // Arrange
+            Func<string, bool, SplitResourcePath> splitter = (string resourcePath, bool isDirectory) => new SplitResourcePath() { Name = null };
+
+            // Act
+            // Assert
+            Assert.Throws(typeof(ArgumentNullException), () =>
+            {
+                var provider = new EmbeddedFileProvider(GetType().GetTypeInfo().Assembly, splitter);
+            });
         }
     }
 }
