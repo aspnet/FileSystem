@@ -73,6 +73,10 @@ namespace Microsoft.Extensions.FileProviders.Composite
             }
         }
 
+        /// <summary>
+        /// Creates an enumerator for all files in all providers given. Does not duplicate items, even if multiple providers for the same file exist.
+        /// </summary>
+        /// <returns>An enumerator over all files in all given providers</returns>
         public IEnumerator<IFileInfo> GetEnumerator()
         {
             EnsureFilesAreInitialized();
@@ -85,6 +89,9 @@ namespace Microsoft.Extensions.FileProviders.Composite
             return _files.GetEnumerator();
         }
 
+        /// <summary>
+        /// True if any given providers exists
+        /// </summary>
         public bool Exists
         {
             get
