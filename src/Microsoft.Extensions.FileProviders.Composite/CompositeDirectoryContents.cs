@@ -74,7 +74,8 @@ namespace Microsoft.Extensions.FileProviders.Composite
         }
 
         /// <summary>
-        /// Creates an enumerator for all files in all providers given. Does not duplicate items, even if multiple providers for the same file exist.
+        /// Creates an enumerator for all files in all providers given.
+        /// Ensures each item in the collection is distinct.
         /// </summary>
         /// <returns>An enumerator over all files in all given providers</returns>
         public IEnumerator<IFileInfo> GetEnumerator()
