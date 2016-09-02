@@ -20,10 +20,10 @@ namespace Microsoft.Extensions.FileProviders.Embedded
         /// <summary>
         /// Initializes a new instance of <see cref="EmbeddedFileProvider"/> for an assembly using <paramref name="resourcePath"/> as the base
         /// </summary>
-        /// <param name="assembly"></param>
-        /// <param name="resourcePath"></param>
+        /// <param name="assembly">The assembly that contains the embedded resource</param>
+        /// <param name="resourcePath">The path to the embedded resource</param>
         /// <param name="name">An arbitrary name for this instance</param>
-        /// <param name="lastModified"></param>
+        /// <param name="lastModified">The <see cref="DateTimeOffset" /> to use for <see cref="LastModified" /></param>
         public EmbeddedResourceFileInfo(
             Assembly assembly,
             string resourcePath,

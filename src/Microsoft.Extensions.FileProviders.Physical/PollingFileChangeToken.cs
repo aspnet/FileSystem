@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
         /// Initializes a new instance of <see cref="PollingFileChangeToken" /> that polls the specified file for changes as
         /// determined by <see cref="System.IO.FileSystemInfo.LastWriteTimeUtc" />.
         /// </summary>
-        /// <param name="fileInfo"></param>
+        /// <param name="fileInfo">The <see cref="System.IO.FileInfo"/> to poll</param>
         public PollingFileChangeToken(FileInfo fileInfo)
         {
             _fileInfo = fileInfo;
@@ -89,8 +89,8 @@ namespace Microsoft.Extensions.FileProviders.Physical
         /// <summary>
         /// Does not actually register callbacks.
         /// </summary>
-        /// <param name="callback"></param>
-        /// <param name="state"></param>
+        /// <param name="callback">This parameter is ignored</param>
+        /// <param name="state">This parameter is ignored</param>
         /// <returns>A disposable object that noops when disposed</returns>
         public IDisposable RegisterChangeCallback(Action<object> callback, object state) => EmptyDisposable.Instance;
     }

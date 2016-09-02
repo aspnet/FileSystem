@@ -12,7 +12,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
     public class PhysicalDirectoryInfo : IFileInfo
     {
         private readonly DirectoryInfo _info;
-        
+
         /// <summary>
         /// Initializes an instance of <see cref="PhysicalDirectoryInfo"/> that wraps an instance of <see cref="System.IO.DirectoryInfo"/>
         /// </summary>
@@ -37,7 +37,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
         public string Name => _info.Name;
 
         /// <summary>
-        /// The time when the directory was last written to. 
+        /// The time when the directory was last written to.
         /// </summary>
         public DateTimeOffset LastModified => _info.LastWriteTimeUtc;
 
@@ -50,7 +50,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
         /// Always throws an exception because read streams are not support on directories.
         /// </summary>
         /// <exception cref="InvalidOperationException">Always thrown</exception>
-        /// <returns></returns>
+        /// <returns>Never returns</returns>
         public Stream CreateReadStream()
         {
             throw new InvalidOperationException("Cannot create a stream for a directory.");

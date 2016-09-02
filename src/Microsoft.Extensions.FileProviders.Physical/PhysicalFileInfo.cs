@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
         /// <summary>
         /// Initializes an instance of <see cref="PhysicalFileInfo"/> that wraps an instance of <see cref="System.IO.FileInfo"/>
         /// </summary>
-        /// <param name="info"></param>
+        /// <param name="info">The <see cref="System.IO.FileInfo"/></param>
         public PhysicalFileInfo(FileInfo info)
         {
             _info = info;

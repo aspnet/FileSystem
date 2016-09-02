@@ -29,7 +29,7 @@ namespace Microsoft.Extensions.FileProviders
         /// Initializes a new instance of the <see cref="EmbeddedFileProvider" /> class using the specified
         /// assembly and empty base namespace.
         /// </summary>
-        /// <param name="assembly"></param>
+        /// <param name="assembly">The assembly that contains the embedded resources.</param>
         public EmbeddedFileProvider(Assembly assembly)
             : this(assembly, assembly?.GetName()?.Name)
         {
@@ -176,7 +176,7 @@ namespace Microsoft.Extensions.FileProviders
         /// <summary>
         /// Embedded files do not change.
         /// </summary>
-        /// <param name="pattern"></param>
+        /// <param name="pattern">This parameter is ignored</param>
         /// <returns>A <see cref="NullChangeToken" /></returns>
         public IChangeToken Watch(string pattern)
         {
