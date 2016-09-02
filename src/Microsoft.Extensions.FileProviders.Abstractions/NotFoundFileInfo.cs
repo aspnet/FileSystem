@@ -52,7 +52,7 @@ namespace Microsoft.Extensions.FileProviders
         /// Always throws. A stream cannot be created for non-existing file.
         /// </summary>
         /// <exception cref="FileNotFoundException">Always thrown.</exception>
-        /// <returns></returns>
+        /// <returns>Does not return</returns>
         public Stream CreateReadStream()
         {
             throw new FileNotFoundException($"The file {Name} does not exist.");
