@@ -33,8 +33,8 @@ namespace Microsoft.Extensions.FileProviders
         /// <summary>
         /// Always returns an empty disposable object. Callbacks will never be called.
         /// </summary>
-        /// <param name="callback"></param>
-        /// <param name="state"></param>
+        /// <param name="callback">This parameter is ignored</param>
+        /// <param name="state">This parameter is ignored</param>
         /// <returns>A disposable object that noops on dispose.</returns>
         public IDisposable RegisterChangeCallback(Action<object> callback, object state)
         {
