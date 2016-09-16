@@ -3,6 +3,9 @@
   "buildOptions": {
     "warningsAsErrors": true,
     "keyFile": "../../tools/Key.snk",
+    "nowarn": [
+      "CS1591"
+    ],
     "xmlDoc": true
   },
   "description": "File provider for physical files for Microsoft.Extensions.FileProviders.",
@@ -38,10 +41,12 @@
     "netstandard1.3": {
       "dependencies": {
         "System.Collections.Concurrent": "4.0.12-*",
+        "System.Diagnostics.Debug": "4.0.11",
         "System.IO.FileSystem.Watcher": "4.0.0-*",
         "System.IO.FileSystem": "4.0.1-*",
         "System.Runtime.Extensions": "4.1.0-*",
-        "System.Threading": "4.0.11-*"
+        "System.Threading": "4.0.11-*",
+        "System.Security.Cryptography.Algorithms": "4.2.0"
       }
     }
   }
