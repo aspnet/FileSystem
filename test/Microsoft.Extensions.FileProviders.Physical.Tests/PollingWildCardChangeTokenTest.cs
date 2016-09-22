@@ -149,7 +149,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
             return fileInfo.Object;
         }
 
-        public class TestablePollingWildCardChangeToken : PollingWildCardChangeToken
+        private class TestablePollingWildCardChangeToken : PollingWildCardChangeToken
         {
             public TestablePollingWildCardChangeToken(
                 DirectoryInfoBase directoryInfo,

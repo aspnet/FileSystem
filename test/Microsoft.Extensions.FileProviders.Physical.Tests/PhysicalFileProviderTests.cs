@@ -1328,8 +1328,11 @@ namespace Microsoft.Extensions.FileProviders
                 var filePath = Path.Combine(root.RootPath, "subdir1", "subdir2", "file.txt");
                 Directory.CreateDirectory(Path.GetDirectoryName(filePath));
                 File.WriteAllText(filePath, "some-content");
-
                 var token = provider.Watch("**/*.txt");
+                var compositeToken = Assert.IsType<CompositeFileChangeToken>(token);
+                Assert.Equal(2, compositeToken.ChangeTokens.Count);
+                var pollingChangeToken = Assert.IsType<PollingWildCardChangeToken>(compositeToken.ChangeTokens[1]);
+                pollingChangeToken.PollingInterval = TimeSpan.FromMilliseconds(WaitTimeForTokenToFire);
 
                 // Act
                 fileSystemWatcher.EnableRaisingEvents = false;

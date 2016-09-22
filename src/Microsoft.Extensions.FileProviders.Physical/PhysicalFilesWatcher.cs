@@ -28,7 +28,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
             new ConcurrentDictionary<string, ChangeTokenInfo>(StringComparer.OrdinalIgnoreCase);
 
         private readonly FileSystemWatcher _fileWatcher;
-        private readonly object _lockObject = new object();
+        private readonly object _fileWatcherLock = new object();
         private readonly string _root;
         private readonly bool _pollForChanges;
 
@@ -267,33 +267,27 @@ namespace Microsoft.Extensions.FileProviders.Physical
 
         private void TryDisableFileSystemWatcher()
         {
-            if (_filePathTokenLookup.IsEmpty && _wildcardTokenLookup.IsEmpty)
+            lock (_fileWatcherLock)
             {
-                lock (_lockObject)
+                if (_filePathTokenLookup.IsEmpty &&
+                    _wildcardTokenLookup.IsEmpty &&
+                    _fileWatcher.EnableRaisingEvents)
                 {
-                    if (_filePathTokenLookup.IsEmpty &&
-                        _wildcardTokenLookup.IsEmpty &&
-                        _fileWatcher.EnableRaisingEvents)
-                    {
-                        // Perf: Turn off the file monitoring if no files to monitor.
-                        _fileWatcher.EnableRaisingEvents = false;
-                    }
+                    // Perf: Turn off the file monitoring if no files to monitor.
+                    _fileWatcher.EnableRaisingEvents = false;
                 }
             }
         }
 
         private void TryEnableFileSystemWatcher()
         {
-            if (!_filePathTokenLookup.IsEmpty || !_wildcardTokenLookup.IsEmpty)
+            lock (_fileWatcherLock)
             {
-                lock (_lockObject)
+                if ((!_filePathTokenLookup.IsEmpty || !_wildcardTokenLookup.IsEmpty) &&
+                    !_fileWatcher.EnableRaisingEvents)
                 {
-                    if ((!_filePathTokenLookup.IsEmpty || !_wildcardTokenLookup.IsEmpty) &&
-                        !_fileWatcher.EnableRaisingEvents)
-                    {
-                        // Perf: Turn off the file monitoring if no files to monitor.
-                        _fileWatcher.EnableRaisingEvents = true;
-                    }
+                    // Perf: Turn off the file monitoring if no files to monitor.
+                    _fileWatcher.EnableRaisingEvents = true;
                 }
             }
         }

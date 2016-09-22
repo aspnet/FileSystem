@@ -3,9 +3,9 @@
 
 using System;
 
-namespace Microsoft.Extensions.FileProviders.Physical.Internal
+namespace Microsoft.Extensions.FileProviders.Physical
 {
-    public interface IClock
+    internal interface IClock
     {
         DateTime UtcNow { get; }
     }

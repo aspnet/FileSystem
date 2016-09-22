@@ -3,9 +3,9 @@
 
 using System;
 
-namespace Microsoft.Extensions.FileProviders.Physical.Internal
+namespace Microsoft.Extensions.FileProviders.Physical
 {
-    public class Clock : IClock
+    internal class Clock : IClock
     {
         public static readonly Clock Instance = new Clock();
 

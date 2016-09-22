@@ -7,11 +7,11 @@ namespace Microsoft.Extensions.FileProviders.Physical.Internal
 {
     public class TestClock : IClock
     {
-        public DateTime UtcNow { get; set; } = DateTime.UtcNow;
+        public DateTime UtcNow { get; private set; } = DateTime.UtcNow;
 
         public void Increment()
         {
-            UtcNow = UtcNow.Add(PollingWildCardChangeToken.PollingInterval);
+            UtcNow = UtcNow.Add(PollingWildCardChangeToken.DefaultPollingInterval);
         }
     }
 }

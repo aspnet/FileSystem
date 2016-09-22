@@ -3,7 +3,7 @@
   "buildOptions": {
     "warningsAsErrors": true,
     "keyFile": "../../tools/Key.snk",
-    "xmlDoc": false
+    "xmlDoc": true
   },
   "description": "Abstractions of files and directories.\r\nCommonly used types:\r\nMicrosoft.Extensions.FileProviders.IDirectoryContents\r\nMicrosoft.Extensions.FileProviders.IFileInfo\r\nMicrosoft.Extensions.FileProviders.IFileProvider",
   "packOptions": {

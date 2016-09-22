@@ -5,7 +5,7 @@
 using System;
 using System.Security.Cryptography;
 
-namespace Microsoft.Extensions.FileProviders.Physical.Internal
+namespace Microsoft.Extensions.FileProviders.Physical
 {
     internal class IncrementalHash : IDisposable
     {
