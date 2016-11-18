@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0-*",
+  "version": "1.1.0",
   "buildOptions": {
     "allowUnsafe": true,
     "warningsAsErrors": true,
@@ -18,13 +18,13 @@
     ]
   },
   "dependencies": {
-    "Microsoft.Extensions.FileProviders.Abstractions": "1.1.0-*",
+    "Microsoft.Extensions.FileProviders.Abstractions": "1.1.0",
     "Microsoft.Extensions.FileProviders.Sources": {
-      "version": "1.1.0-*",
+      "version": "1.1.0-rtm-22752",
       "type": "build"
     },
-    "Microsoft.Extensions.FileSystemGlobbing": "1.1.0-*",
-    "NETStandard.Library": "1.6.1-*"
+    "Microsoft.Extensions.FileSystemGlobbing": "1.1.0",
+    "NETStandard.Library": "1.6.1"
   },
   "frameworks": {
     "net451": {
@@ -39,7 +39,7 @@
     },
     "netstandard1.3": {
       "dependencies": {
-        "System.IO.FileSystem.Watcher": "4.3.0-*"
+        "System.IO.FileSystem.Watcher": "4.3.0"
       }
     }
   }
