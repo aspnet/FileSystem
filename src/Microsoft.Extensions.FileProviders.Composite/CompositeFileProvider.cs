@@ -93,8 +93,8 @@ namespace Microsoft.Extensions.FileProviders
             {
                 return NullChangeToken.Singleton;
             }
-            var CompositeFileChangeToken = new CompositeFileChangeToken(changeTokens);
-            return CompositeFileChangeToken;
+            var CompositeChangeToken = new CompositeChangeToken(changeTokens);
+            return CompositeChangeToken;
         }
 
         /// <summary>
