@@ -4,7 +4,7 @@
     "warningsAsErrors": true,
     "keyFile": "../../tools/Key.snk",
     "xmlDoc": true,
-    "compile": "../Shared/**/*.cs"
+    "compile": "../../shared/**/*.cs"
   },
   "description": "File provider for files in embedded resources for Microsoft.Extensions.FileProviders.",
   "packOptions": {
