@@ -243,7 +243,7 @@ namespace Microsoft.Extensions.FileProviders.Composite
             var hasBeenCalled = false;
             object result = null;
             object state = new object();
-            var registeredState = changeToken.RegisterChangeCallback(item =>
+            changeToken.RegisterChangeCallback(item =>
             {
                 hasBeenCalled = true;
                 result = item;
