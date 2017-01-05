@@ -251,10 +251,9 @@ namespace Microsoft.Extensions.FileProviders.Composite
             Assert.Equal(1, firstChangeToken.Callbacks.Count);
             Assert.Equal(0, secondChangeToken.Callbacks.Count);
             Assert.Equal(1, thirdChangeToken.Callbacks.Count);
-            var expectedResult = new object();
-            firstChangeToken.RaiseCallback(expectedResult);
+            firstChangeToken.RaiseCallback(changeToken);
             Assert.True(hasBeenCalled);
-            Assert.Equal(expectedResult, result);
+            Assert.NotNull(result);
         }
     }
 }
