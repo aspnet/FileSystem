@@ -1,9 +1,9 @@
 {
   "dependencies": {
     "dotnet-test-xunit": "2.2.0-*",
-    "Microsoft.AspNetCore.Testing": "1.1.0-rtm-22752",
-    "Microsoft.Extensions.FileProviders.Composite": "1.1.0",
-    "Microsoft.Extensions.FileProviders.Sources": "1.1.0-rtm-22752",
+    "Microsoft.AspNetCore.Testing": "1.1.1",
+    "Microsoft.Extensions.FileProviders.Composite": "1.1.1",
+    "Microsoft.Extensions.FileProviders.Sources": "1.1.1",
     "xunit": "2.2.0-*"
   },
   "testRunner": "xunit",
