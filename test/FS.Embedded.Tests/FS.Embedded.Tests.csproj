@@ -3,14 +3,18 @@
   <Import Project="..\..\build\common.props" />
 
   <PropertyGroup>
-    <RootNamespace>Microsoft.Extensions.FileSystemGlobbing</RootNamespace>
-    <AssemblyName>Microsoft.Extensions.FileSystemGlobbing.Tests</AssemblyName>
+    <RootNamespace>Microsoft.Extensions.FileProviders.Embedded.Tests</RootNamespace>
+    <AssemblyName>Microsoft.Extensions.FileProviders.Embedded.Tests</AssemblyName>
     <TargetFrameworks>netcoreapp2.0;net461</TargetFrameworks>
     <TargetFrameworks Condition=" '$(OS)' != 'Windows_NT' ">netcoreapp2.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Globbing\Globbing.csproj" />
+    <EmbeddedResource Include="File.txt;sub\**\*;Resources\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FS.Embedded\FS.Embedded.csproj" />
   </ItemGroup>
 
   <ItemGroup>

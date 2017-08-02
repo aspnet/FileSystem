@@ -4,19 +4,18 @@
 
   <PropertyGroup>
     <RootNamespace>Microsoft.Extensions.FileProviders</RootNamespace>
-    <AssemblyName>Microsoft.Extensions.FileProviders.Composite</AssemblyName>
-    <Description>Composite file and directory providers for Microsoft.Extensions.FileProviders.</Description>
+    <AssemblyName>Microsoft.Extensions.FileProviders.Physical</AssemblyName>
+    <Description>File provider for physical files for Microsoft.Extensions.FileProviders.</Description>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTags>files;filesystem</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="..\..\shared\**\*.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Abstractions\Abstractions.csproj" />
+    <ProjectReference Include="..\FS.Abstractions\FS.Abstractions.csproj" />
+    <ProjectReference Include="..\FS.Globbing\FS.Globbing.csproj" />
   </ItemGroup>
 
 </Project>

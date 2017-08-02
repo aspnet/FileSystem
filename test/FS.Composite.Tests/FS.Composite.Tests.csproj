@@ -1,16 +1,20 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\build\common.props" />
 
   <PropertyGroup>
-    <RootNamespace>Microsoft.Extensions.FileProviders.Physical</RootNamespace>
-    <AssemblyName>Microsoft.Extensions.FileProviders.Physical.Tests</AssemblyName>
+    <RootNamespace>Microsoft.Extensions.FileProviders.Composite</RootNamespace>
+    <AssemblyName>Microsoft.Extensions.FileProviders.Composite.Tests</AssemblyName>
     <TargetFrameworks>netcoreapp2.0;net461</TargetFrameworks>
     <TargetFrameworks Condition=" '$(OS)' != 'Windows_NT' ">netcoreapp2.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Physical\Physical.csproj" />
+    <Compile Include="..\..\shared\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FS.Composite\FS.Composite.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,12 +23,6 @@
     <PackageReference Include="Moq" Version="$(MoqVersion)" />
     <PackageReference Include="xunit" Version="$(XunitVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="MockFileSystemWatcher.cs">
-      <SubType>Component</SubType>
-    </Compile>
   </ItemGroup>
 
 </Project>
