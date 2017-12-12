@@ -255,7 +255,11 @@ namespace Microsoft.Extensions.FileProviders.Physical
                 }
 
                 var relativePath = fullPath.Substring(_root.Length);
-                ReportChangeForMatchedEntries(relativePath);
+
+                if (relativePath != string.Empty)
+                {
+                    ReportChangeForMatchedEntries(relativePath);
+                }
             }
             catch (Exception ex) when (
                 ex is IOException ||
