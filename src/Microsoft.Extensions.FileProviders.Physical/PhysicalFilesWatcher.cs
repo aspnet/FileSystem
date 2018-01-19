@@ -34,6 +34,14 @@ namespace Microsoft.Extensions.FileProviders.Physical
         private readonly bool _pollForChanges;
 
         /// <summary>
+        /// If for some unforseen reason the patch for aspnet/Home#2808 causes issues for users,
+        /// this gives them a way to disable the behavior change.
+        /// They is enabled by setting <c>Switch.Microsoft.AspNetCore.FileProviders.IgnoreEmptyRenameEvents</c> to <c>true</c>
+        /// in the app configuration.
+        /// </summary>
+        private readonly bool _emptyRenameEventQuirksMode;
+
+        /// <summary>
         /// Initializes an instance of <see cref="PhysicalFilesWatcher" /> that watches files in <paramref name="root" />.
         /// Wraps an instance of <see cref="System.IO.FileSystemWatcher" />
         /// </summary>
@@ -48,6 +56,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
             FileSystemWatcher fileSystemWatcher,
             bool pollForChanges)
         {
+            AppContext.TryGetSwitch("Switch.Microsoft.AspNetCore.FileProviders.IgnoreEmptyRenameEvents", out _emptyRenameEventQuirksMode);
             _root = root;
             _fileWatcher = fileSystemWatcher;
             _fileWatcher.IncludeSubdirectories = true;
@@ -245,7 +254,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
 
         private void ReportChangeForMatchedEntries(string path)
         {
-            if (string.IsNullOrEmpty(path))
+            if (!_emptyRenameEventQuirksMode && string.IsNullOrEmpty(path))
             {
                 // System.IO.FileSystemWatcher may trigger events that are missing the file name,
                 // which makes it appear as if the root directory is renamed or deleted. Moving the root directory

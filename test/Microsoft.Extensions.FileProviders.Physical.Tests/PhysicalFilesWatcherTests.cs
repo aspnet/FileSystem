@@ -1,6 +1,7 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Xunit;
@@ -32,6 +33,19 @@ namespace Microsoft.Extensions.FileProviders.Physical.Tests
         [Fact]
         public async Task HandlesOnRenamedEventsThatMatchRootPath()
         {
+            AppContext.SetSwitch("Switch.Microsoft.AspNetCore.FileProviders.IgnoreEmptyRenameEvents", true);
+            using (var root = new DisposableFileSystem())
+            using (var fileSystemWatcher = new MockFileSystemWatcher(root.RootPath))
+            using (var physicalFilesWatcher = new PhysicalFilesWatcher(root.RootPath + Path.DirectorySeparatorChar, fileSystemWatcher, pollForChanges: false))
+            {
+                var token = physicalFilesWatcher.CreateFileChangeToken("**");
+                token.RegisterChangeCallback(o => { }, null);
+
+                Assert.Throws<ArgumentException>(
+                    () => fileSystemWatcher.CallOnRenamed(new RenamedEventArgs(WatcherChangeTypes.Renamed, root.RootPath, string.Empty, string.Empty)));
+            }
+
+            AppContext.SetSwitch("Switch.Microsoft.AspNetCore.FileProviders.IgnoreEmptyRenameEvents", false);
             using (var root = new DisposableFileSystem())
             using (var fileSystemWatcher = new MockFileSystemWatcher(root.RootPath))
             using (var physicalFilesWatcher = new PhysicalFilesWatcher(root.RootPath + Path.DirectorySeparatorChar, fileSystemWatcher, pollForChanges: false))
