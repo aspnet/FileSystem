@@ -41,10 +41,11 @@ namespace Microsoft.Extensions.FileProviders.Physical.Tests
                 token.RegisterChangeCallback(o => called = true, null);
 
                 fileSystemWatcher.CallOnRenamed(new RenamedEventArgs(WatcherChangeTypes.Renamed, root.RootPath, string.Empty, string.Empty));
+                await Task.Delay(WaitTimeForTokenToFire).ConfigureAwait(false);
                 Assert.False(called, "Callback should not have been triggered");
 
                 fileSystemWatcher.CallOnRenamed(new RenamedEventArgs(WatcherChangeTypes.Renamed, root.RootPath, "old.txt", "new.txt"));
-                await Task.Delay(WaitTimeForTokenToFire);
+                await Task.Delay(WaitTimeForTokenToFire).ConfigureAwait(false);
                 Assert.True(called, "Callback should have been triggered");
             }
         }

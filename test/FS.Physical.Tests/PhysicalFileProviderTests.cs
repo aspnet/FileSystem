@@ -437,7 +437,7 @@ namespace Microsoft.Extensions.FileProviders
                             Assert.True(token.ActiveChangeCallbacks);
 
                             fileSystemWatcher.CallOnDeleted(new FileSystemEventArgs(WatcherChangeTypes.Deleted, root.RootPath, fileName));
-                            await Task.Delay(WaitTimeForTokenToFire);
+                            await Task.Delay(WaitTimeForTokenToFire).ConfigureAwait(false);
 
                             Assert.True(token.HasChanged);
                         }
