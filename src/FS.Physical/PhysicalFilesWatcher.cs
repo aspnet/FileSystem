@@ -373,8 +373,27 @@ namespace Microsoft.Extensions.FileProviders.Physical
                 if ((!_filePathTokenLookup.IsEmpty || !_wildcardTokenLookup.IsEmpty) &&
                     !_fileWatcher.EnableRaisingEvents)
                 {
-                    // Perf: Turn off the file monitoring if no files to monitor.
-                    _fileWatcher.EnableRaisingEvents = true;
+                    // Don't capture the current ExecutionContext and its AsyncLocals onto the events causing them to live forever
+                    var restoreFlow = false;
+                    try
+                    {
+                        if (!ExecutionContext.IsFlowSuppressed())
+                        {
+                            ExecutionContext.SuppressFlow();
+                            restoreFlow = true;
+                        }
+
+                        // Perf: Turn off the file monitoring if no files to monitor.
+                        _fileWatcher.EnableRaisingEvents = true;
+                    }
+                        finally
+                    {
+                        // Restore the current ExecutionContext
+                        if (restoreFlow)
+                        {
+                            ExecutionContext.RestoreFlow();
+                        }
+                    }
                 }
             }
         }
