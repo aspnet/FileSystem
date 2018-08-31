@@ -27,8 +27,8 @@ namespace Microsoft.Extensions.FileProviders
 
         private readonly ExclusionFilters _filters;
 
-        private readonly Func<PhysicalFilesWatcher> _fileWatcherFactory;
-        private PhysicalFilesWatcher _fileWatcher;
+        private readonly Func<IFileWatcher> _fileWatcherFactory;
+        private IFileWatcher _fileWatcher;
         private bool _fileWatcherInitialized;
         private object _fileWatcherLock = new object();
 
@@ -76,7 +76,6 @@ namespace Microsoft.Extensions.FileProviders
         /// for <see cref="Watch(string)"/>. <see cref="FileSystemWatcher"/> is ineffective in some scenarios such as mounted drives.
         /// Polling is required to effectively watch for file changes.
         /// </para>
-        /// <seealso cref="UseActivePolling"/>.
         /// </summary>
         /// <value>
         /// The default value of this property is determined by the value of environment variable named <c>DOTNET_USE_POLLING_FILE_WATCHER</c>.
@@ -101,37 +100,7 @@ namespace Microsoft.Extensions.FileProviders
             set => _usePollingFileWatcher = value;
         }
 
-        /// <summary>
-        /// Gets or sets a value that determines if this instance of <see cref="PhysicalFileProvider"/>
-        /// actively polls for file changes.
-        /// <para>
-        /// When <see langword="true"/>, <see cref="IChangeToken"/> returned by <see cref="Watch(string)"/> will actively poll for file changes
-        /// (<see cref="IChangeToken.ActiveChangeCallbacks"/> will be <see langword="true"/>) instead of being passive.
-        /// </para>
-        /// <para>
-        /// This property is only effective when <see cref="UsePollingFileWatcher"/> is set.
-        /// </para>
-        /// </summary>
-        /// <value>
-        /// The default value of this property is determined by the value of environment variable named <c>DOTNET_USE_POLLING_FILE_WATCHER</c>.
-        /// When <c>true</c> or <c>1</c>, this property defaults to <c>true</c>; otherwise false.
-        /// </value>
-        public bool UseActivePolling
-        {
-            get
-            {
-                if (_useActivePolling == null)
-                {
-                    ReadPollingEnvironmentVariables();
-                }
-
-                return _useActivePolling.Value;
-            }
-
-            set => _useActivePolling = value;
-        }
-
-        internal PhysicalFilesWatcher FileWatcher
+        internal IFileWatcher FileWatcher
         {
             get
             {
@@ -150,13 +119,15 @@ namespace Microsoft.Extensions.FileProviders
             }
         }
 
-        internal PhysicalFilesWatcher CreateFileWatcher()
+        internal IFileWatcher CreateFileWatcher()
         {
             var root = PathUtils.EnsureTrailingSlash(Path.GetFullPath(Root));
-            return new PhysicalFilesWatcher(root, new FileSystemWatcher(root), UsePollingFileWatcher, _filters)
+            if (UsePollingFileWatcher)
             {
-                UseActivePolling = UseActivePolling,
-            };
+                return new PollingFileWatcher(root, PollingFileWatcher.DefaultPollingInterval);
+            }
+
+            return new PhysicalFilesWatcher(root, new FileSystemWatcher(root), _filters);
         }
 
         private void ReadPollingEnvironmentVariables()

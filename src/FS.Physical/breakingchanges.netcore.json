@@ -1,0 +1,22 @@
+﻿[
+  {
+    "TypeId": "public class Microsoft.Extensions.FileProviders.Physical.PollingFileChangeToken : Microsoft.Extensions.Primitives.IChangeToken",
+    "MemberId": "public .ctor(System.IO.FileInfo fileInfo)",
+    "Kind": "Removal"
+  },
+  {
+    "TypeId": "public class Microsoft.Extensions.FileProviders.Physical.PhysicalFilesWatcher : System.IDisposable",
+    "MemberId": "public .ctor(System.String root, System.IO.FileSystemWatcher fileSystemWatcher, System.Boolean pollForChanges)",
+    "Kind": "Removal"
+  },
+  {
+    "TypeId": "public class Microsoft.Extensions.FileProviders.Physical.PhysicalFilesWatcher : System.IDisposable",
+    "MemberId": "public .ctor(System.String root, System.IO.FileSystemWatcher fileSystemWatcher, System.Boolean pollForChanges, Microsoft.Extensions.FileProviders.Physical.ExclusionFilters filters)",
+    "Kind": "Removal"
+  },
+  {
+    "TypeId": "public class Microsoft.Extensions.FileProviders.Physical.PollingWildCardChangeToken : Microsoft.Extensions.Primitives.IChangeToken",
+    "MemberId": "public .ctor(System.String root, System.String pattern)",
+    "Kind": "Removal"
+  }
+]

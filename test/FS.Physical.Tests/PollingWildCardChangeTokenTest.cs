@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Microsoft.Extensions.FileProviders.Physical.Internal;
 using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 using Moq;
@@ -15,25 +16,25 @@ namespace Microsoft.Extensions.FileProviders.Physical
     public class PollingWildCardChangeTokenTest
     {
         [Fact]
-        public void HasChanged_ReturnsFalseIfNoFilesExist()
+        public void UpdateHasChanged_ReturnsFalseIfNoFilesExist()
         {
             // Arrange
             var directoryInfo = new Mock<DirectoryInfoBase>();
             directoryInfo.Setup(d => d.EnumerateFileSystemInfos())
                 .Returns(Enumerable.Empty<FileSystemInfoBase>());
             var clock = new TestClock();
-            var token = new PollingWildCardChangeToken(directoryInfo.Object, "**/*.txt", clock);
+            var token = new PollingWildCardChangeToken(directoryInfo.Object, "**/*.txt", clock, new CancellationTokenSource());
 
             // Act
             clock.Increment();
-            var result = token.HasChanged;
+            var result = token.UpdateHasChanged();
 
             // Assert
             Assert.False(result);
         }
 
         [Fact]
-        public void HasChanged_ReturnsFalseIfFilesDoNotChange()
+        public void UpdateHasChanged_ReturnsFalseIfFilesDoNotChange()
         {
             // Arrange
             var filePath = "1.txt";
@@ -46,14 +47,14 @@ namespace Microsoft.Extensions.FileProviders.Physical
 
             // Act
             clock.Increment();
-            var result = token.HasChanged;
+            var result = token.UpdateHasChanged();
 
             // Assert
             Assert.False(result);
         }
 
         [Fact]
-        public void HasChanged_ReturnsTrueIfNewFilesWereAdded()
+        public void UpdateHasChanged_ReturnsTrueIfNewFilesWereAdded()
         {
             // Arrange
             var filePath1 = "1.txt";
@@ -66,7 +67,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
 
             // Act - 1
             clock.Increment();
-            var result1 = token.HasChanged;
+            var result1 = token.UpdateHasChanged();
 
             // Assert - 1
             Assert.False(result1);
@@ -76,14 +77,14 @@ namespace Microsoft.Extensions.FileProviders.Physical
                 .Returns(new[] { CreateFile(filePath1), CreateFile(filePath2) });
 
             clock.Increment();
-            var result2 = token.HasChanged;
+            var result2 = token.UpdateHasChanged();
 
             // Assert - 2
             Assert.True(result2);
         }
 
         [Fact]
-        public void HasChanged_ReturnsTrueIfFilesWereRemoved()
+        public void UpdateHasChanged_ReturnsTrueIfFilesWereRemoved()
         {
             // Arrange
             var filePath1 = "1.txt";
@@ -96,7 +97,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
 
             // Act - 1
             clock.Increment();
-            var result1 = token.HasChanged;
+            var result1 = token.UpdateHasChanged();
 
             // Assert - 1
             Assert.False(result1);
@@ -105,14 +106,14 @@ namespace Microsoft.Extensions.FileProviders.Physical
             directoryInfo.Setup(d => d.EnumerateFileSystemInfos())
                 .Returns(new[] { CreateFile(filePath1), });
             clock.Increment();
-            var result2 = token.HasChanged;
+            var result2 = token.UpdateHasChanged();
 
             // Assert - 2
             Assert.True(result2);
         }
 
         [Fact]
-        public void HasChanged_ReturnsTrueIfFilesWereModified()
+        public void UpdateHasChanged_ReturnsTrueIfFilesWereModified()
         {
             // Arrange
             var filePath1 = "1.txt";
@@ -125,7 +126,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
 
             // Act - 1
             clock.Increment();
-            var result1 = token.HasChanged;
+            var result1 = token.UpdateHasChanged();
 
             // Assert - 1
             Assert.False(result1);
@@ -133,14 +134,14 @@ namespace Microsoft.Extensions.FileProviders.Physical
             // Act - 2
             token.FileTimestampLookup[filePath2] = clock.UtcNow.AddMilliseconds(1);
             clock.Increment();
-            var result2 = token.HasChanged;
+            var result2 = token.UpdateHasChanged();
 
             // Assert - 2
             Assert.True(result2);
         }
 
         [Fact]
-        public void HasChanged_ReturnsTrueIfFileWasModifiedButRetainedAnOlderTimestamp()
+        public void UpdateHasChanged_ReturnsTrueIfFileWasModifiedButRetainedAnOlderTimestamp()
         {
             // Arrange
             var filePath1 = "1.txt";
@@ -153,7 +154,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
 
             // Act - 1
             clock.Increment();
-            var result1 = token.HasChanged;
+            var result1 = token.UpdateHasChanged();
 
             // Assert - 1
             Assert.False(result1);
@@ -161,7 +162,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
             // Act - 2
             token.FileTimestampLookup[filePath2] = clock.UtcNow.AddMilliseconds(-100);
             clock.Increment();
-            var result2 = token.HasChanged;
+            var result2 = token.UpdateHasChanged();
 
             // Assert - 2
             Assert.True(result2);
@@ -183,7 +184,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
                 DirectoryInfoBase directoryInfo,
                 string pattern,
                 IClock clock)
-                : base(directoryInfo, pattern, clock)
+                : base(directoryInfo, pattern, clock, new CancellationTokenSource())
             {
             }
 
@@ -192,8 +193,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
 
             protected override DateTime GetLastWriteUtc(string path)
             {
-                DateTime value;
-                if (!FileTimestampLookup.TryGetValue(path, out value))
+                if (!FileTimestampLookup.TryGetValue(path, out var value))
                 {
                     value = DateTime.MinValue;
                 }

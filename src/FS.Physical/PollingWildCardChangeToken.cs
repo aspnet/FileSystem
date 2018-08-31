@@ -20,28 +20,28 @@ namespace Microsoft.Extensions.FileProviders.Physical
     public class PollingWildCardChangeToken : IPollingChangeToken
     {
         private static readonly byte[] Separator = Encoding.Unicode.GetBytes("|");
-        private readonly object _enumerationLock = new object();
         private readonly DirectoryInfoBase _directoryInfo;
         private readonly Matcher _matcher;
-        private bool _changed;
-        private DateTime? _lastScanTimeUtc;
         private byte[] _byteBuffer;
         private byte[] _previousHash;
-        private CancellationTokenSource _tokenSource;
         private CancellationChangeToken _changeToken;
+        private DateTime _lastScanTimeUtc;
 
         /// <summary>
         /// Initializes a new instance of <see cref="PollingWildCardChangeToken"/>.
         /// </summary>
         /// <param name="root">The root of the file system.</param>
         /// <param name="pattern">The pattern to watch.</param>
+        /// <param name="cancellationTokenSource">The <see cref="System.Threading.CancellationTokenSource"/>.</param>
         public PollingWildCardChangeToken(
             string root,
-            string pattern)
+            string pattern,
+            CancellationTokenSource cancellationTokenSource)
             : this(
                 new DirectoryInfoWrapper(new DirectoryInfo(root)),
                 pattern,
-                Physical.Clock.Instance)
+                Physical.Clock.Instance,
+                cancellationTokenSource)
         {
         }
 
@@ -49,58 +49,39 @@ namespace Microsoft.Extensions.FileProviders.Physical
         internal PollingWildCardChangeToken(
             DirectoryInfoBase directoryInfo,
             string pattern,
-            IClock clock)
+            IClock clock,
+            CancellationTokenSource cancellationTokenSource)
         {
             _directoryInfo = directoryInfo;
             Clock = clock;
 
             _matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
             _matcher.AddInclude(pattern);
+            CancellationTokenSource = cancellationTokenSource;
+            _changeToken = new CancellationChangeToken(cancellationTokenSource.Token);
             CalculateChanges();
         }
 
         /// <inheritdoc />
-        public bool ActiveChangeCallbacks { get; internal set; }
+        public bool ActiveChangeCallbacks => true;
 
-        // Internal for unit testing.
-        internal TimeSpan PollingInterval { get; set; } = PhysicalFilesWatcher.DefaultPollingInterval;
-
-        internal CancellationTokenSource CancellationTokenSource
-        {
-            get => _tokenSource;
-            set
-            {
-                Debug.Assert(_tokenSource == null, "We expect CancellationTokenSource to be initialized exactly once.");
-
-                _tokenSource = value;
-                _changeToken = new CancellationChangeToken(_tokenSource.Token);
-            }
-        }
+        internal CancellationTokenSource CancellationTokenSource { get; }
 
         CancellationTokenSource IPollingChangeToken.CancellationTokenSource => CancellationTokenSource;
 
         private IClock Clock { get; }
 
         /// <inheritdoc />
-        public bool HasChanged
+        public bool HasChanged { get; private set; }
+
+        /// <summary>
+        /// Updates <see cref="HasChanged"/>.
+        /// </summary>
+        /// <returns>The updated value of <see cref="HasChanged"/>.</returns>
+        public bool UpdateHasChanged()
         {
-            get
-            {
-                if (_changed)
-                {
-                    return _changed;
-                }
-
-                if (Clock.UtcNow - _lastScanTimeUtc >= PollingInterval)
-                {
-                    lock (_enumerationLock)
-                    {
-                        _changed = CalculateChanges();
-                    }
-                }
-
-                return _changed;
-            }
+            HasChanged |= CalculateChanges();
+            return HasChanged;
         }
 
         private bool CalculateChanges()
@@ -108,6 +89,10 @@ namespace Microsoft.Extensions.FileProviders.Physical
             var result = _matcher.Execute(_directoryInfo);
 
             var files = result.Files.OrderBy(f => f.Path, StringComparer.Ordinal);
+
+            // To verify if directory contents changed,
+            // a) Determine if no file is newer than the last time this method scanned for files
+            // b) Determine if files were added, removed or changed. To do this, we'll diff the hash of all the file paths as a result of a scan.
             using (var sha256 = IncrementalHash.CreateHash(HashAlgorithmName.SHA256))
             {
                 foreach (var file in files)

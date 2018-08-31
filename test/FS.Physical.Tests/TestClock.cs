@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.FileProviders.Physical.Internal
 
         public void Increment()
         {
-            UtcNow = UtcNow.Add(PhysicalFilesWatcher.DefaultPollingInterval);
+            UtcNow = UtcNow.Add(PollingFileWatcher.DefaultPollingInterval);
         }
     }
 }

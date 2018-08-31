@@ -21,11 +21,9 @@ namespace Microsoft.Extensions.FileProviders.Physical
     ///     Triggers events on <see cref="IChangeToken" /> when files are created, change, renamed, or deleted.
     ///     </para>
     /// </summary>
-    public class PhysicalFilesWatcher : IDisposable
+    public class PhysicalFilesWatcher : IFileWatcher
     {
         private static readonly Action<object> _cancelTokenSource = state => ((CancellationTokenSource)state).Cancel();
-
-        internal static TimeSpan DefaultPollingInterval = TimeSpan.FromSeconds(4);
 
         private readonly ConcurrentDictionary<string, ChangeTokenInfo> _filePathTokenLookup =
             new ConcurrentDictionary<string, ChangeTokenInfo>(StringComparer.OrdinalIgnoreCase);
@@ -37,44 +35,16 @@ namespace Microsoft.Extensions.FileProviders.Physical
         private readonly string _root;
         private readonly ExclusionFilters _filters;
 
-        private Timer _timer;
-        private bool _timerInitialzed;
-        private object _timerLock = new object();
-        private Func<Timer> _timerFactory;
-
         /// <summary>
         /// Initializes an instance of <see cref="PhysicalFilesWatcher" /> that watches files in <paramref name="root" />.
         /// Wraps an instance of <see cref="System.IO.FileSystemWatcher" />
         /// </summary>
         /// <param name="root">Root directory for the watcher</param>
         /// <param name="fileSystemWatcher">The wrapped watcher that is watching <paramref name="root" /></param>
-        /// <param name="pollForChanges">
-        /// True when the watcher should use polling to trigger instances of
-        /// <see cref="IChangeToken" /> created by <see cref="CreateFileChangeToken(string)" />
-        /// </param>
-        public PhysicalFilesWatcher(
-            string root,
-            FileSystemWatcher fileSystemWatcher,
-            bool pollForChanges)
-            : this(root, fileSystemWatcher, pollForChanges, ExclusionFilters.Sensitive)
-        {
-        }
-
-        /// <summary>
-        /// Initializes an instance of <see cref="PhysicalFilesWatcher" /> that watches files in <paramref name="root" />.
-        /// Wraps an instance of <see cref="System.IO.FileSystemWatcher" />
-        /// </summary>
-        /// <param name="root">Root directory for the watcher</param>
-        /// <param name="fileSystemWatcher">The wrapped watcher that is watching <paramref name="root" /></param>
-        /// <param name="pollForChanges">
-        /// True when the watcher should use polling to trigger instances of
-        /// <see cref="IChangeToken" /> created by <see cref="CreateFileChangeToken(string)" />
-        /// </param>
         /// <param name="filters">Specifies which files or directories are excluded. Notifications of changes to are not raised to these.</param>
         public PhysicalFilesWatcher(
             string root,
             FileSystemWatcher fileSystemWatcher,
-            bool pollForChanges,
             ExclusionFilters filters)
         {
             _root = root;
@@ -86,18 +56,8 @@ namespace Microsoft.Extensions.FileProviders.Physical
             _fileWatcher.Deleted += OnChanged;
             _fileWatcher.Error += OnError;
 
-            PollForChanges = pollForChanges;
             _filters = filters;
-
-            PollingChangeTokens = new ConcurrentDictionary<IPollingChangeToken, IPollingChangeToken>();
-            _timerFactory = () => new Timer(RaiseChangeEvents, state: PollingChangeTokens, dueTime: TimeSpan.Zero, period: DefaultPollingInterval);
         }
-
-        internal bool PollForChanges { get; }
-
-        internal bool UseActivePolling { get; set; }
-
-        internal ConcurrentDictionary<IPollingChangeToken, IPollingChangeToken> PollingChangeTokens { get; }
 
         /// <summary>
         ///     <para>
@@ -106,7 +66,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
         ///     </para>
         ///     <para>
         ///     Globbing patterns are relative to the root directory given in the constructor
-        ///     <seealso cref="PhysicalFilesWatcher(string, FileSystemWatcher, bool)" />. Globbing patterns
+        ///     <seealso cref="PhysicalFilesWatcher(string, FileSystemWatcher, ExclusionFilters)" />. Globbing patterns
         ///     are interpreted by <seealso cref="Matcher" />.
         ///     </para>
         /// </summary>
@@ -136,11 +96,6 @@ namespace Microsoft.Extensions.FileProviders.Physical
 
         private IChangeToken GetOrAddChangeToken(string pattern)
         {
-            if (UseActivePolling)
-            {
-                LazyInitializer.EnsureInitialized(ref _timer, ref _timerInitialzed, ref _timerLock, _timerFactory);
-            }
-
             IChangeToken changeToken;
             var isWildCard = pattern.IndexOf('*') != -1;
             if (isWildCard || IsDirectoryPath(pattern))
@@ -157,74 +112,32 @@ namespace Microsoft.Extensions.FileProviders.Physical
 
         internal IChangeToken GetOrAddFilePathChangeToken(string filePath)
         {
-            if (!_filePathTokenLookup.TryGetValue(filePath, out var tokenInfo))
+            if (_filePathTokenLookup.TryGetValue(filePath, out var tokenInfo))
             {
-                var cancellationTokenSource = new CancellationTokenSource();
-                var cancellationChangeToken = new CancellationChangeToken(cancellationTokenSource.Token);
-                tokenInfo = new ChangeTokenInfo(cancellationTokenSource, cancellationChangeToken);
-                tokenInfo = _filePathTokenLookup.GetOrAdd(filePath, tokenInfo);
+                return tokenInfo.ChangeToken;
             }
 
-            IChangeToken changeToken = tokenInfo.ChangeToken;
-            if (PollForChanges)
-            {
-                // The expiry of CancellationChangeToken is controlled by this type and consequently we can cache it.
-                // PollingFileChangeToken on the other hand manages its own lifetime and consequently we cannot cache it.
-                var pollingChangeToken = new PollingFileChangeToken(new FileInfo(Path.Combine(_root, filePath)));
-
-                if (UseActivePolling)
-                {
-                    pollingChangeToken.ActiveChangeCallbacks = true;
-                    pollingChangeToken.CancellationTokenSource = new CancellationTokenSource();
-                    PollingChangeTokens.TryAdd(pollingChangeToken, pollingChangeToken);
-                }
-
-                changeToken = new CompositeChangeToken(
-                    new[]
-                    {
-                        changeToken,
-                        pollingChangeToken,
-                    });
-            }
-
-            return changeToken;
+            var cancellationTokenSource = new CancellationTokenSource();
+            var cancellationChangeToken = new CancellationChangeToken(cancellationTokenSource.Token);
+            tokenInfo = new ChangeTokenInfo(cancellationTokenSource, cancellationChangeToken);
+            tokenInfo = _filePathTokenLookup.GetOrAdd(filePath, tokenInfo);
+            return tokenInfo.ChangeToken;
         }
 
         internal IChangeToken GetOrAddWildcardChangeToken(string pattern)
         {
-            if (!_wildcardTokenLookup.TryGetValue(pattern, out var tokenInfo))
+            if (_wildcardTokenLookup.TryGetValue(pattern, out var tokenInfo))
             {
-                var cancellationTokenSource = new CancellationTokenSource();
-                var cancellationChangeToken = new CancellationChangeToken(cancellationTokenSource.Token);
-                var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
-                matcher.AddInclude(pattern);
-                tokenInfo = new ChangeTokenInfo(cancellationTokenSource, cancellationChangeToken, matcher);
-                tokenInfo = _wildcardTokenLookup.GetOrAdd(pattern, tokenInfo);
+                return tokenInfo.ChangeToken;
             }
 
-            IChangeToken changeToken = tokenInfo.ChangeToken;
-            if (PollForChanges)
-            {
-                // The expiry of CancellationChangeToken is controlled by this type and consequently we can cache it.
-                // PollingFileChangeToken on the other hand manages its own lifetime and consequently we cannot cache it.
-                var pollingChangeToken = new PollingWildCardChangeToken(_root, pattern);
-
-                if (UseActivePolling)
-                {
-                    pollingChangeToken.ActiveChangeCallbacks = true;
-                    pollingChangeToken.CancellationTokenSource = new CancellationTokenSource();
-                    PollingChangeTokens.TryAdd(pollingChangeToken, pollingChangeToken);
-                }
-
-                changeToken = new CompositeChangeToken(
-                    new[]
-                    {
-                        changeToken,
-                        pollingChangeToken,
-                    });
-            }
-
-            return changeToken;
+            var cancellationTokenSource = new CancellationTokenSource();
+            var cancellationChangeToken = new CancellationChangeToken(cancellationTokenSource.Token);
+            var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
+            matcher.AddInclude(pattern);
+            tokenInfo = new ChangeTokenInfo(cancellationTokenSource, cancellationChangeToken, matcher);
+            tokenInfo = _wildcardTokenLookup.GetOrAdd(pattern, tokenInfo);
+            return tokenInfo.ChangeToken;
         }
 
         /// <summary>
@@ -239,7 +152,6 @@ namespace Microsoft.Extensions.FileProviders.Physical
         protected virtual void Dispose(bool disposing)
         {
             _fileWatcher.Dispose();
-            _timer?.Dispose();
         }
 
         /// <summary>
@@ -400,38 +312,6 @@ namespace Microsoft.Extensions.FileProviders.Physical
                 CancellationToken.None,
                 TaskCreationOptions.DenyChildAttach,
                 TaskScheduler.Default);
-        }
-
-        internal static void RaiseChangeEvents(object state)
-        {
-            // Iterating over a concurrent bag gives us a point in time snapshot making it safe
-            // to remove items from it.
-            var changeTokens = (ConcurrentDictionary<IPollingChangeToken, IPollingChangeToken>)state;
-            foreach (var item in changeTokens)
-            {
-                var token = item.Key;
-
-                if (!token.HasChanged)
-                {
-                    continue;
-                }
-
-                if (!changeTokens.TryRemove(token, out _))
-                {
-                    // Move on if we couldn't remove the item.
-                    continue;
-                }
-
-                // We're already on a background thread, don't need to spawn a background Task to cancel the CTS
-                try
-                {
-                    token.CancellationTokenSource.Cancel();
-                }
-                catch
-                {
-
-                }
-            }
         }
 
         private readonly struct ChangeTokenInfo
