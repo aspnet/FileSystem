@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
 using Microsoft.Extensions.FileProviders.Physical.Internal;
+using Microsoft.Extensions.Internal;
 using Microsoft.Extensions.Primitives;
 
 namespace Microsoft.Extensions.FileProviders.Physical
@@ -23,7 +24,7 @@ namespace Microsoft.Extensions.FileProviders.Physical
 
             // PhysicalFileProvider lazy initializes IFileWatcher instances. It's OK for us to initialize this in the ctor since we anticipate
             // GetFileChangeToken to be invoked right after.
-            _timer = new Timer(RaiseChangeEvents, state: PollingChangeTokens, dueTime: pollingInterval, period: pollingInterval);
+            _timer = NonCapturingTimer.Create(RaiseChangeEvents, state: PollingChangeTokens, dueTime: pollingInterval, period: pollingInterval);
         }
 
         public ConcurrentDictionary<string, IPollingChangeToken> PollingChangeTokens { get; }
