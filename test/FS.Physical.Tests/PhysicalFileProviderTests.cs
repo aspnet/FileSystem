@@ -937,51 +937,6 @@ namespace Microsoft.Extensions.FileProviders
         }
 
         [Fact]
-        public async Task AsyncLocalsNotCapturedToEvents()
-        {
-            // Capture clean context
-            var executionContext = ExecutionContext.Capture();
-
-            var asyncLocal = new AsyncLocal<int>();
-            asyncLocal.Value = 1;
-
-            using (var root = new DisposableFileSystem())
-            {
-                using (var fileSystemWatcher = new MockFileSystemWatcher(root.RootPath))
-                {
-                    using (var physicalFilesWatcher = new PhysicalFilesWatcher(root.RootPath + Path.DirectorySeparatorChar, fileSystemWatcher, pollForChanges: false))
-                    {
-                        Assert.Equal(1, asyncLocal.Value);
-                        using (var provider = new PhysicalFileProvider(root.RootPath) { FileWatcher = physicalFilesWatcher })
-                        {
-                            var name = Guid.NewGuid().ToString();
-                            var token = provider.Watch(name);
-                            var didFire = false;
-                            
-                            token.RegisterChangeCallback(al =>
-                            {
-                                Assert.Equal(0, ((AsyncLocal<int>)al).Value);
-                                didFire = true;
-                            }, asyncLocal);
-
-                            // Fire in clean context
-                            ExecutionContext.Run(
-                                executionContext,
-                                _ => fileSystemWatcher.CallOnChanged(new FileSystemEventArgs(WatcherChangeTypes.Created, root.RootPath, name))
-                                , null);
-
-                            await Task.Delay(WaitTimeForTokenToFire);
-
-                            Assert.True(didFire);
-                            Assert.True(token.HasChanged);
-                            Assert.Equal(1, asyncLocal.Value);
-                        }
-                    }
-                }
-            }
-        }
-
-        [Fact]
         public async Task TokenFiredOnDeletion()
         {
             using (var root = new DisposableFileSystem())
